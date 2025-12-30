@@ -9,4 +9,4 @@ in French and English.
 - Hosted on GitHub Pages
 
 Live version:
-https://<your-username>.github.io/FPMB/
+https://verneranton.github.io/FPMB/
