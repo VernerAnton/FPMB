@@ -896,11 +896,11 @@
 
       if (includePortal) {
         bullets.push(lang === 'fr'
-          ? `Vous pouvez également essayer un autre moyen de paiement, tel que PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa ou Amex, entre autres. Pour ce faire, accédez à votre <strong>portail client</strong> via le lien ci-dessous.`
-          : `You may also try another payment method (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex, etc.). To do this, access your <strong>customer portal</strong> via the link below.`);
+          ? `Vous pouvez également essayer un autre moyen de paiement, tel que PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa ou Amex, entre autres. Pour ce faire, accédez à votre portail client via le lien ci-dessous.`
+          : `You may also try another payment method (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex, etc.). To do this, access your customer portal via the link below.`);
       }
 
-      const bulletsHTML = `<ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
+      const bulletsHTML = `<ul>${bullets.map(b => `<li>${b.replace(/portail client/g, '<strong>portail client</strong>').replace(/customer portal/g, '<strong>customer portal</strong>')}</li>`).join('')}</ul>`;
 
       // Signature formatting
       const sigLines = signature.split('\n').map(esc);
