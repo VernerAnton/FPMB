@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Failed Payment Message Builder</title>
+
+  <style>
+    /* ====== ToolBox Style Template (adapted) ====== */
+    :root { --font-main: 'Courier New', Courier, monospace; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow-x: hidden; }
+
+    body {
+      font-family: var(--font-main);
+      transition: background 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+    }
+
+    body.light-mode { background: linear-gradient(to bottom, #f4f1ea 0%, #ebe7db 100%); color: #2a2a2a; }
+    body.dark-mode { background: linear-gradient(to bottom, #1a1a1a 0%, #0d0d0d 100%); color: #e0e0e0; }
+    body.loading { visibility: hidden; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: clamp(0.75rem, 3vw, 2rem);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Header (always one line) ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(0.5rem, 2vw, 1.25rem);
+      border-bottom: 2px solid;
+      padding-bottom: 1rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: nowrap;
+    }
+
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      font-size: clamp(0.7rem, 1.8vw, 0.875rem);
+      flex-shrink: 0;
+    }
+
+    .title {
+      font-size: clamp(1rem, 4vw, 2.2rem);
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      margin: 0;
+      text-align: center;
+      user-select: none;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1 1 auto;
+    }
+
+    .spacer { display: none; }
+
+    .subtitle {
+      text-align: left;
+      opacity: 0.8;
+      margin: 0 0 1.25rem 0;
+      /* dynamic sizing */
+      font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+      padding: 0;
+      line-height: 1.35;
+    }
+
+    /* Main card baseline (was missing, which is why the big card looked broken) */
+    .tool-shell {
+      border: 2px solid;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (max-width: 520px) {
+      /* Phone & narrow sidebar: hide MODE text, keep icon */
+      .mode-toggle span { display: none; }
+      .header { gap: 0.5rem; }
+      .title { font-size: clamp(0.95rem, 5vw, 1.35rem); }
+      .subtitle {
+        font-size: clamp(0.68rem, 3.2vw, 0.8rem);
+        line-height: 1.3;
+      }
+      .tool-shell { padding: 1rem; gap: 0.85rem; }
+      .tool-title { font-size: 1rem; }
+      .tool-desc { font-size: 0.85rem; }
+      .choice { padding: 0.8rem 0.75rem; gap: 0.75rem; }
+      .num { min-width: 2rem; padding: 0.3rem 0.45rem; }
+      textarea { min-height: 240px; }
+      .status { max-width: 100%; }
+      .footer { margin-top: 1.5rem; padding-top: 1.1rem; }
+    }
+
+    
+    /* Sidebar / mobile: reduce chrome, keep everything readable */
+    @media (max-width: 520px) {
+      .subtitle {
+        font-size: clamp(0.68rem, 3.2vw, 0.8rem);
+        line-height: 1.3;
+        padding: 0 0.5rem;
+      }
+      .tool-shell { padding: 1rem; gap: 0.85rem; }
+      .tool-title { font-size: 1rem; }
+      .tool-desc { font-size: 0.85rem; }
+      .choice { padding: 0.8rem 0.75rem; gap: 0.75rem; }
+      .num { min-width: 2rem; padding: 0.3rem 0.45rem; }
+      textarea { min-height: 240px; }
+      .status { max-width: 100%; }
+      .footer { margin-top: 1.5rem; padding-top: 1.1rem; }
+    }
+
+    .light-mode .tool-shell {
+      background: #fefdfb;
+      border-color: #2a2a2a;
+      box-shadow: 4px 4px 0px #2a2a2a;
+      color: #2a2a2a;
+    }
+
+    .dark-mode .tool-shell {
+      background: #2a2a2a;
+      border-color: #e0e0e0;
+      box-shadow: 4px 4px 0px #e0e0e0;
+      color: #e0e0e0;
+    }
+
+    /* No hover animation or color change on the main options card */
+    .tool-shell:hover { transform: none; background: inherit; box-shadow: inherit; }
+    .light-mode .tool-shell:hover { background: #fefdfb; box-shadow: 4px 4px 0px #2a2a2a; }
+    .dark-mode .tool-shell:hover { background: #2a2a2a; box-shadow: 4px 4px 0px #e0e0e0; }
+    .tool-shell:active { transform: translate(0, 0); }
+
+    .tool-header { display: flex; flex-direction: column; gap: 0.25rem; }
+    .tool-title { font-size: 1.125rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+    .tool-desc { font-size: 0.875rem; opacity: 0.75; line-height: 1.35; }
+
+    .topRow {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      opacity: 0.85;
+    }
+
+    .help {
+      font-size: 0.85rem;
+      opacity: 0.75;
+      line-height: 1.35;
+    }
+
+    .list {
+      display:flex;
+      flex-direction:column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .choice {
+      display:flex;
+      align-items:center;
+      gap: 0.9rem;
+      padding: 0.85rem 0.9rem;
+      border: 2px solid;
+      font-weight: bold;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s;
+      background: none;
+    }
+
+    .light-mode .choice { border-color: #2a2a2a; box-shadow: 3px 3px 0px #2a2a2a; }
+    .dark-mode .choice { border-color: #e0e0e0; box-shadow: 3px 3px 0px #e0e0e0; }
+
+    .choice:hover { transform: translate(-2px, -2px); }
+    .choice:active { transform: translate(0, 0); box-shadow: 1px 1px 0px currentColor; }
+    .choice:focus { outline: 2px solid currentColor; outline-offset: 4px; }
+
+    .num {
+      min-width: 2.2rem;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 0.35rem 0.55rem;
+      border: 2px solid;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .light-mode .num { border-color: #2a2a2a; }
+    .dark-mode .num { border-color: #e0e0e0; }
+
+    textarea {
+      width: 100%;
+      font-family: inherit;
+      border: 2px solid;
+      padding: 0.85rem;
+      outline: none;
+      line-height: 1.35;
+      min-height: 320px;
+      resize: vertical;
+      white-space: pre-wrap;
+      transition: transform 0.15s, background 0.2s;
+    }
+
+    .light-mode textarea { background: #fefdfb; color: #2a2a2a; border-color: #2a2a2a; }
+    .dark-mode textarea { background: #1f1f1f; color: #e0e0e0; border-color: #e0e0e0; }
+
+    textarea:focus { transform: translate(-1px, -1px); }
+
+    /* ===== Rich email preview (Step 3) ===== */
+    .email-preview {
+      width: 100%;
+      border: 2px solid;
+      padding: 0.85rem;
+      line-height: 2;
+      min-height: 320px;
+      overflow: auto;
+      user-select: text;
+    }
+
+    .light-mode .email-preview {
+      background: #fefdfb;
+      color: #2a2a2a;
+      border-color: #2a2a2a;
+    }
+
+    .dark-mode .email-preview {
+      background: #1f1f1f;
+      color: #e0e0e0;
+      border-color: #e0e0e0;
+    }
+
+    /* Email-like formatting */
+    .email-preview p { margin: 0 0 0.9rem 0; }
+    .email-preview .subjectline { font-weight: bold; margin-bottom: 1.1rem; }
+    .email-preview ul { margin: 0.25rem 0 1rem 1.6rem; padding: 0; }
+    .email-preview li { margin: 0.35rem 0; }
+    .email-preview a { text-decoration: underline; }
+
+    /* Strong / emphasis mimic email */
+    .email-preview strong { font-weight: bold; }
+    .email-preview em { font-style: italic; }
+
+    .actions {
+      display:flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content: space-between;
+      margin-top: 0.25rem;
+    }
+
+    /* In narrow sidebars, stack status + buttons cleanly */
+    @media (max-width: 520px) {
+      .actions { flex-direction: column; align-items: stretch; }
+      .status { width: 100%; }
+      .btnRow { width: 100%; }
+      .btnRow button { width: 100%; }
+    }
+
+    .status {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 52ch;
+    }
+
+    button {
+      font-family: inherit;
+      border: 2px solid;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: transform 0.15s;
+      background: none;
+    }
+
+    .light-mode button { color: #2a2a2a; border-color: #2a2a2a; box-shadow: 3px 3px 0px #2a2a2a; }
+    .dark-mode button { color: #e0e0e0; border-color: #e0e0e0; box-shadow: 3px 3px 0px #e0e0e0; }
+
+    button:hover { transform: translate(-2px, -2px); }
+    button:active { transform: translate(0, 0); box-shadow: 1px 1px 0px currentColor; }
+    button:focus { outline: 2px solid currentColor; outline-offset: 4px; }
+
+    .btnRow { display:flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid;
+      opacity: 0.6;
+      font-size: 0.875rem;
+    }
+
+    .light-mode .footer { border-color: #2a2a2a; }
+    .dark-mode .footer { border-color: #e0e0e0; }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.8rem 1.2rem;
+      font-family: var(--font-main);
+      font-size: 0.95rem;
+      border: 2px solid;
+      z-index: 1000;
+      transition: opacity 0.25s;
+      opacity: 0;
+      pointer-events: none;
+      letter-spacing: 0.06em;
+    }
+    .notification.show { opacity: 1; }
+
+    .light-mode .notification { background: #fefdfb; color: #2a2a2a; border-color: #2a2a2a; box-shadow: 4px 4px 0px #2a2a2a; }
+    .dark-mode .notification { background: #2a2a2a; color: #e0e0e0; border-color: #e0e0e0; box-shadow: 4px 4px 0px #e0e0e0; }
+
+    .muted { opacity: 0.75; }
+
+    /* Tests panel */
+    details.tests {
+      border: 2px dashed;
+      padding: 0.9rem;
+      margin-top: 0.5rem;
+    }
+    .light-mode details.tests { border-color: #2a2a2a; }
+    .dark-mode details.tests { border-color: #e0e0e0; }
+    details.tests summary {
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+    .testlog {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      line-height: 1.35;
+      opacity: 0.9;
+    }
+  </style>
+
+  <script>
+    // Immediately apply saved theme to prevent flash (from template)
+    (function() {
+      const saved = localStorage.getItem('themePreference') || 'system';
+      const isDark = saved === 'dark' || (saved === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) document.documentElement.style.background = '#1a1a1a';
+    })();
+  </script>
+</head>
+<body class="loading">
+  <div class="container">
+    <header class="header">
+      <div class="mode-toggle">
+        <span>[ MODE ]</span>
+        <button onclick="cycleTheme()" id="theme-btn" aria-label="Toggle theme"></button>
+      </div>
+      <h1 class="title">════ FPMB ════</h1>
+      <div class="spacer" aria-hidden="true"></div>
+    </header>
+    <div class="subtitle">[ Choose reason (1–7) · choose language (1–2) · copied ]</div>
+
+    <main class="tool-shell" aria-label="Failed payment message builder">
+      <div class="topRow">
+        <div class="tool-header">
+          <div class="tool-title">Failed Payment Message Builder</div>
+          <div class="tool-desc">Keyboard-first, step-by-step. Output is copied after language selection.</div>
+        </div>
+        <div class="step" id="stepIndicator">[ STEP 1 / 3 ]</div>
+      </div>
+
+      <div id="screen"></div>
+
+      <div class="actions">
+        <div class="status" id="status">[ Ready. ]</div>
+        <div class="btnRow" id="footerButtons"></div>
+      </div>
+
+      <div class="help muted" id="hint">Tip: use number keys. Esc goes back. Enter starts a new message on the final screen.</div>
+
+      <details class="tests" id="tests">
+        <summary>[ TESTS ]</summary>
+        <div class="testlog" id="testlog">(not run)</div>
+      </details>
+    </main>
+
+    <footer class="footer">[ Local tool · no server · no tracking ]</footer>
+  </div>
+
+  <div id="note" class="notification" role="status" aria-live="polite">[ OK ]</div>
+
+  <script>
+    // ===== Theme Management System (from template) =====
+    const body = document.body;
+    const themeBtn = document.getElementById('theme-btn');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyTheme(preference) {
+      const isSystemDark = mediaQuery.matches;
+      let finalTheme;
+      if (preference === 'system') finalTheme = isSystemDark ? 'dark' : 'light';
+      else finalTheme = preference;
+
+      body.classList.remove('dark-mode', 'light-mode', 'loading');
+      body.classList.add(finalTheme + '-mode');
+      updateButton(preference, finalTheme);
+    }
+
+    function updateButton(preference, actualTheme) {
+      if (preference === 'system') {
+        themeBtn.textContent = '🌓';
+        themeBtn.title = `Auto (${actualTheme})`;
+      } else if (actualTheme === 'dark') {
+        themeBtn.textContent = '☀️';
+        themeBtn.title = 'Switch to system';
+      } else {
+        themeBtn.textContent = '🌙';
+        themeBtn.title = 'Switch to dark';
+      }
+    }
+
+    function cycleTheme() {
+      const current = localStorage.getItem('themePreference') || 'system';
+      const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
+      localStorage.setItem('themePreference', next);
+      applyTheme(next);
+    }
+
+    mediaQuery.addEventListener('change', () => {
+      const pref = localStorage.getItem('themePreference') || 'system';
+      if (pref === 'system') applyTheme('system');
+    });
+
+    // Apply immediately to reduce flash
+    const immediatePref = localStorage.getItem('themePreference') || 'system';
+    const isImmediateDark = immediatePref === 'dark' || (immediatePref === 'system' && mediaQuery.matches);
+    body.classList.add(isImmediateDark ? 'dark-mode' : 'light-mode');
+
+    // ===== App State =====
+    const STATE = {
+      step: 1,          // 1 reason, 2 language, 3 result
+      reasonIndex: null,
+      lang: null,
+      emailText: '',
+      emailHTML: ''
+    };
+
+    // ===== Hardcoded links (DO NOT CHANGE) =====
+    const LINKS = {
+      portal: 'https://billing.stripe.com/p/login/00g5m9a4pbOEd4k7ss',
+      resetFR: 'https://app.imagineclarity.com/fr/mdp/nouveau?plan=year&submit=true',
+      resetEN: 'https://app.imagineclarity.com/password/new',
+      contactFR: 'https://app.imagineclarity.com/fr/contact',
+      contactEN: 'https://app.imagineclarity.com/contact'
+    };
+
+    // Human-label portal section (only when allowed)
+    const PORTAL_SECTION = {
+      fr: `Portail client (Stripe) : ${LINKS.portal}`,
+      en: `Customer Portal (Stripe): ${LINKS.portal}`
+    };
+
+    // Optional 3rd bullet (only when portal is allowed)
+    const OPTIONAL_PORTAL_BULLET = {
+      fr: 'Vous pouvez également essayer un autre moyen de paiement via le portail client.',
+      en: 'You may also try another payment method via the customer portal.'
+    };
+
+    // ===== Reasons (7) — human labels + exact variable lines from your rulebook =====
+    // Portal is NOT allowed for lost/stolen.
+    const REASONS = [
+      {
+        key: 'card_expired',
+        label: 'Card expired',
+        portalAllowed: true,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : La carte enregistrée a expiré.',
+          secondBullet: 'Entrez les nouvelles informations de votre carte ou mettez‑les à jour.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: The registered card has expired.',
+          secondBullet: 'Enter your new or updated card details.'
+        }
+      },
+      {
+        key: 'incorrect_card_number',
+        label: 'Incorrect card number',
+        portalAllowed: true,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : Le numéro de carte saisi est incorrect.',
+          secondBullet: 'Réessayez avec le bon numéro de carte. Si le problème persiste, contactez votre banque.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: The card number entered is incorrect.',
+          secondBullet: 'Try again with the correct card number. If the issue continues, contact your bank.'
+        }
+      },
+      {
+        key: 'invalid_card_or_account_number',
+        label: 'Invalid card or account number',
+        portalAllowed: true,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : Les informations de paiement sont invalides.',
+          secondBullet: 'Réessayez avec les bonnes informations de paiement.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: The card or account number is invalid.',
+          secondBullet: 'Try again with the correct payment details.'
+        }
+      },
+      {
+        key: 'bank_declined',
+        label: 'Payment declined by the issuing bank',
+        portalAllowed: true,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : La banque a peut‑être refusé la transaction.',
+          secondBullet: 'Votre banque a peut‑être refusé le paiement. Nous vous conseillons de la contacter.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: The bank may have declined the transaction.',
+          secondBullet: 'Your bank may have declined the payment. Please contact them to verify.'
+        }
+      },
+      {
+        key: 'paypal_declined',
+        label: 'Payment declined by PayPal',
+        portalAllowed: true,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : PayPal a refusé la transaction.',
+          secondBullet: 'Essayez un autre moyen de paiement.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: PayPal declined the transaction.',
+          secondBullet: 'Try another payment method.'
+        }
+      },
+      {
+        key: 'lost_or_stolen',
+        label: 'Payment failed (card reported lost/stolen)',
+        portalAllowed: false,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : La transaction a été refusée par la banque.',
+          secondBullet: 'Contactez votre banque pour plus d’informations.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: The transaction was declined by your bank.',
+          secondBullet: 'Contact your bank for more information.'
+        }
+      },
+      {
+        key: 'session_interrupted',
+        label: 'Session interrupted / timeout',
+        portalAllowed: true,
+        fr: {
+          reasonLine: 'Raison de l’échec du paiement : La tentative de paiement n’a pas pu être finalisée (session interrompue).',
+          secondBullet: 'Réessayez en complétant toutes les étapes sans fermer la page.'
+        },
+        en: {
+          reasonLine: 'Reason for Payment Failure: The payment attempt could not be completed due to an interrupted session.',
+          secondBullet: 'Retry and complete the payment without closing the page.'
+        }
+      }
+    ];
+
+    // ===== DOM =====
+    const els = {
+      screen: document.getElementById('screen'),
+      status: document.getElementById('status'),
+      note: document.getElementById('note'),
+      stepIndicator: document.getElementById('stepIndicator'),
+      footerButtons: document.getElementById('footerButtons'),
+      hint: document.getElementById('hint'),
+      testlog: document.getElementById('testlog')
+    };
+
+    let noteTimer = null;
+    function showNote(text) {
+      els.note.textContent = `[ ${text} ]`;
+      els.note.classList.add('show');
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => els.note.classList.remove('show'), 1400);
+    }
+
+    function setStatus(text) { els.status.textContent = `[ ${text} ]`; }
+
+    function setStep(n) {
+      STATE.step = n;
+      els.stepIndicator.textContent = `[ STEP ${n} / 3 ]`;
+    }
+
+    function clearFooterButtons() { els.footerButtons.innerHTML = ''; }
+
+    function addFooterButton(label, onClick) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.addEventListener('click', onClick);
+      els.footerButtons.appendChild(b);
+    }
+
+    function render() {
+      clearFooterButtons();
+
+      if (STATE.step === 1) {
+        setStep(1);
+        setStatus('Choose reason');
+        els.hint.textContent = 'Tip: press 1–7. Or click a row. Esc does nothing here.';
+
+        const list = document.createElement('div');
+        list.className = 'list';
+
+        REASONS.forEach((r, idx) => {
+          const btn = document.createElement('div');
+          btn.className = 'choice';
+          btn.tabIndex = 0;
+          btn.setAttribute('role', 'button');
+          btn.setAttribute('aria-label', `${idx + 1}. ${r.label}`);
+
+          const num = document.createElement('div');
+          num.className = 'num';
+          num.textContent = String(idx + 1);
+
+          const text = document.createElement('div');
+          text.textContent = r.label;
+
+          btn.appendChild(num);
+          btn.appendChild(text);
+
+          btn.addEventListener('click', () => selectReason(idx));
+          btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectReason(idx);
+            }
+          });
+
+          list.appendChild(btn);
+        });
+
+        els.screen.innerHTML = '';
+        els.screen.appendChild(list);
+      }
+
+      if (STATE.step === 2) {
+        setStep(2);
+        setStatus('Choose language');
+        els.hint.textContent = 'Press 1 for French, 2 for English. Esc to go back.';
+
+        const list = document.createElement('div');
+        list.className = 'list';
+
+        const fr = document.createElement('div');
+        fr.className = 'choice';
+        fr.tabIndex = 0;
+        fr.setAttribute('role', 'button');
+        fr.innerHTML = `<div class="num">1</div><div>French (FR)</div>`;
+        fr.addEventListener('click', () => selectLang('fr'));
+        fr.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectLang('fr');
+          }
+        });
+
+        const en = document.createElement('div');
+        en.className = 'choice';
+        en.tabIndex = 0;
+        en.setAttribute('role', 'button');
+        en.innerHTML = `<div class="num">2</div><div>English (EN)</div>`;
+        en.addEventListener('click', () => selectLang('en'));
+        en.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectLang('en');
+          }
+        });
+
+        list.appendChild(fr);
+        list.appendChild(en);
+
+        els.screen.innerHTML = '';
+        els.screen.appendChild(list);
+
+        addFooterButton('Back (Esc)', () => goBack());
+      }
+
+      if (STATE.step === 3) {
+        setStep(3);
+        // Note: clipboard may be blocked in sandbox. Status is set by copyRichToClipboard.
+        els.hint.textContent = 'Press Enter to start a new message. Esc goes back to language.';
+
+        const preview = document.createElement('div');
+        preview.className = 'email-preview';
+        preview.setAttribute('aria-label', 'Email preview (HTML)');
+        preview.tabIndex = 0;
+
+        // Render HTML preview
+        preview.innerHTML = STATE.emailHTML;
+
+        els.screen.innerHTML = '';
+        els.screen.appendChild(preview);
+
+        // Copy HTML again (with text fallback)
+        addFooterButton('Copy again', () => copyRichToClipboard(STATE.emailHTML, STATE.emailText));
+        addFooterButton('New message (Enter)', () => reset());
+        addFooterButton('Back (Esc)', () => goBack());
+      }
+    }
+
+    function selectReason(idx) {
+      STATE.reasonIndex = idx;
+      setStatus(`Reason ${idx + 1}`);
+      showNote('REASON');
+      setStep(2);
+      render();
+    }
+
+    function selectLang(lang) {
+      STATE.lang = lang;
+      buildMessage();
+      copyRichToClipboard(STATE.emailHTML, STATE.emailText);
+      setStep(3);
+      render();
+    }
+
+    function stripMarkdown(input) {
+      // Minimal markdown stripper:
+      // - **bold** -> bold
+      // - [text](url) -> url
+      // - leaves plain URLs intact
+      return String(input)
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$2');
+    }
+
+    function buildMessage() {
+      const reason = REASONS[STATE.reasonIndex];
+      const lang = STATE.lang;
+
+      // Subject included as first line WITHOUT "Subject:" / "Sujet :"
+      const subjectLine = lang === 'fr'
+        ? "Action requise aujourd'hui - Problème avec le renouvellement de votre abonnement Imagine Clarity"
+        : 'Action Required Today – Issue with Your Imagine Clarity Subscription Renewal';
+
+      const greeting = lang === 'fr'
+        ? 'Cher client Imagine Clarity,'
+        : 'Dear Imagine Clarity customer,';
+
+      const intro = lang === 'fr'
+        ? "Un problème est survenu avec le renouvellement de votre abonnement Imagine Clarity. Imagine Clarity utilise Stripe pour les paiements en ligne, et plusieurs options sont disponibles pour résoudre ce problème. Veuillez agir dès aujourd’hui."
+        : 'There is an issue with your Imagine Clarity subscription renewal. Imagine Clarity uses Stripe for online payments, and several options are available to resolve this. Please take action today.';
+
+      const keepHeader = lang === 'fr'
+        ? 'Pour conserver votre abonnement (votre tarif actuel est inférieur au tarif 2025) :'
+        : 'To keep your membership (your current rate is lower than the 2025 rate):';
+
+      const bullet1 = lang === 'fr'
+        ? 'Veuillez vous assurer que votre adresse de facturation est correcte.'
+        : 'Please ensure your billing address is accurate.';
+
+      const bullet2 = reason[lang].secondBullet;
+      const includePortal = !!reason.portalAllowed;
+      const bullet3 = includePortal ? OPTIONAL_PORTAL_BULLET[lang] : '';
+      const portalSection = includePortal ? PORTAL_SECTION[lang] : '';
+
+      const cancel = lang === 'fr'
+        ? `Pour annuler votre abonnement : Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser ici : ${LINKS.resetFR}`
+        : `To cancel your membership: Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it here: ${LINKS.resetEN}`;
+
+      const urgency = lang === 'fr'
+        ? `**Il est important de résoudre ce problème rapidement** ; sinon Stripe continuera à tenter le paiement en utilisant les informations existantes. Si vous avez des questions ou des préoccupations, veuillez nous contacter : ${LINKS.contactFR}. Nous sommes toujours là pour vous aider. Merci pour votre coopération !`
+        : `**It is important to resolve the issue promptly;** otherwise, Stripe will continue to attempt payment using the existing information. If you have any questions or concerns, please contact us: ${LINKS.contactEN}. We are always here to assist. Thank you for your cooperation!`;
+
+      // IMPORTANT: use template literals for multi-line signature
+      const signature = lang === 'fr'
+        ? `Cordialement,\nAnton\nImagine Clarity Customer Care`
+        : `Best regards,\nAnton\nImagine Clarity Customer Care`;
+
+      // ---------- Plain text output (keeps your current structure) ----------
+      const lines = [];
+      lines.push(subjectLine);
+      lines.push('');
+      lines.push(greeting);
+      lines.push('');
+      lines.push(intro);
+      lines.push('');
+      lines.push(reason[lang].reasonLine);
+      lines.push('');
+      lines.push(keepHeader);
+      lines.push('');
+      lines.push(`- ${bullet1}`);
+      lines.push(`- ${bullet2}`);
+      if (includePortal) lines.push(`- ${bullet3}`);
+      lines.push('');
+      if (includePortal) {
+        lines.push(portalSection);
+        lines.push('');
+      }
+      lines.push(cancel);
+      lines.push('');
+      lines.push(urgency);
+      lines.push('');
+      lines.push(signature);
+
+      STATE.emailText = stripMarkdown(lines.join('\n'));
+
+
+      // ---------- HTML output (Proton-friendly rich paste) ----------
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      const stripeUrl = 'https://stripe.com/payments';
+
+      // Build "intro" with real Stripe link, like your screenshot
+      const introHTML = lang === 'fr'
+        ? `Un problème est survenu avec le renouvellement de votre abonnement Imagine Clarity. Imagine Clarity utilise <a href="${stripeUrl}">Stripe pour les paiements en ligne</a>, et <strong>plusieurs options sont disponibles pour résoudre ce problème</strong>. Veuillez agir dès aujourd'hui.`
+        : `There is an issue with your Imagine Clarity subscription renewal. Imagine Clarity uses <a href="${stripeUrl}">Stripe for online payments</a>, and <strong>several options are available to resolve this</strong>. Please take action today.`;
+
+      // Cancel section with password reset link as "ici / here" (more email-like)
+      const cancelHTML = (lang === 'fr')
+        ? `<p><strong>Pour annuler votre abonnement :</strong> Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser <a href="${LINKS.resetFR}">ici</a>.</p>`
+        : `<p><strong>To cancel your membership:</strong> Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it <a href="${LINKS.resetEN}">here</a>.</p>`;
+
+      // Contact link as "nous contacter / contact us"
+      const contactHTML = (lang === 'fr')
+        ? `<a href="${LINKS.contactFR}">nous contacter</a>`
+        : `<a href="${LINKS.contactEN}">contact us</a>`;
+
+      // Urgency with embedded contact link
+      const urgencyHTML = (lang === 'fr')
+        ? `<p><strong>Il est important de résoudre ce problème rapidement ;</strong> sinon Stripe continuera à tenter le paiement en utilisant les informations existantes. Si vous avez des questions ou des préoccupations, veuillez ${contactHTML}. Nous sommes toujours là pour vous aider. Merci pour votre coopération&nbsp;!</p>`
+        : `<p><strong>It is important to resolve the issue promptly;</strong> otherwise, Stripe will continue to attempt payment using the existing information. If you have any questions or concerns, please ${contactHTML}. We are always here to assist. Thank you for your cooperation!</p>`;
+
+      // Portal section as "Portail client" link when allowed
+      const portalHTML = includePortal
+        ? (lang === 'fr'
+            ? `<p><strong>Visitez votre compte :</strong> <a href="${LINKS.portal}">Portail client</a></p>`
+            : `<p><strong>Visit your account:</strong> <a href="${LINKS.portal}">Customer Portal</a></p>`)
+        : '';
+
+      const keepHeaderHTML = `<p><strong>${esc(keepHeader)}</strong></p>`;
+      const reasonLineHTML = `<p><em>${esc(reason[lang].reasonLine)}</em></p>`;
+
+      // Bullets (email-like)
+      const bullets = [];
+      bullets.push(lang === 'fr'
+        ? `Veuillez vous assurer que votre adresse de facturation est correcte, car cela aide à éviter les problèmes de paiement et garantit un traitement réussi.`
+        : `Please ensure your billing address is correct, as it helps avoid payment issues and ensures successful processing.`);
+
+      bullets.push(reason[lang].secondBullet);
+
+      if (includePortal) {
+        bullets.push(lang === 'fr'
+          ? `Vous pouvez également essayer un autre moyen de paiement, tel que PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa ou Amex, entre autres. Pour ce faire, accédez à votre <strong>portail client</strong> via le lien ci-dessous.`
+          : `You may also try another payment method (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex, etc.). To do this, access your <strong>customer portal</strong> via the link below.`);
+      }
+
+      const bulletsHTML = `<ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
+
+      // Signature formatting
+      const sigLines = signature.split('\n').map(esc);
+      const signatureHTML = `<p>${sigLines.join('<br>')}</p>`;
+
+      // Subject included in body (bold), no "Subject:" label
+      STATE.emailHTML = [
+        `<div class="subjectline">${esc(subjectLine)}</div>`,
+        `<p><strong>${esc(greeting)}</strong></p>`,
+        `<p>${introHTML}</p>`,
+        reasonLineHTML,
+        keepHeaderHTML,
+        bulletsHTML,
+        portalHTML,
+        cancelHTML,
+        urgencyHTML,
+        signatureHTML
+      ].join('');
+    }
+
+    async function copyRichToClipboard(html, text) {
+      if (!html && !text) {
+        setStatus('Nothing to copy');
+        showNote('EMPTY');
+        return;
+      }
+
+      // Prefer HTML clipboard when possible
+      const canWriteRich =
+        !!(navigator.clipboard &&
+           typeof navigator.clipboard.write === 'function' &&
+           window.isSecureContext &&
+           typeof window.ClipboardItem !== 'undefined');
+
+      if (canWriteRich) {
+        try {
+          const htmlBlob = new Blob([html], { type: 'text/html' });
+          const textBlob = new Blob([text || ''], { type: 'text/plain' });
+
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': htmlBlob,
+              'text/plain': textBlob
+            })
+          ]);
+
+          setStatus('Copied (HTML)');
+          showNote('COPIED');
+          return;
+        } catch {
+          // fall through
+        }
+      }
+
+      // Fallback: plain text copy (execCommand)
+      try {
+        const tmp = document.createElement('textarea');
+        tmp.value = text || '';
+        tmp.setAttribute('readonly', '');
+        tmp.style.position = 'fixed';
+        tmp.style.top = '0';
+        tmp.style.left = '-9999px';
+        tmp.style.opacity = '0';
+        document.body.appendChild(tmp);
+        tmp.focus();
+        tmp.select();
+
+        const ok = document.execCommand('copy');
+        document.body.removeChild(tmp);
+
+        setStatus(ok ? 'Copied (text)' : 'Copy blocked');
+        showNote(ok ? 'COPIED' : 'BLOCKED');
+      } catch {
+        setStatus('Copy blocked');
+        showNote('BLOCKED');
+      }
+    }
+
+    function goBack() {
+      if (STATE.step === 3) {
+        setStep(2);
+        render();
+        return;
+      }
+      if (STATE.step === 2) {
+        setStep(1);
+        render();
+        return;
+      }
+    }
+
+    function reset() {
+      STATE.step = 1;
+      STATE.reasonIndex = null;
+      STATE.lang = null;
+      STATE.emailText = '';
+      STATE.emailHTML = '';
+      setStatus('Ready');
+      showNote('READY');
+      render();
+    }
+
+    // Keyboard handling
+    window.addEventListener('keydown', (e) => {
+      // Ignore when typing in a textarea/input/select
+      const tag = (document.activeElement && document.activeElement.tagName)
+        ? document.activeElement.tagName.toLowerCase()
+        : '';
+      const isTyping = tag === 'textarea' || tag === 'input' || tag === 'select';
+
+      if (STATE.step === 1) {
+        if (!isTyping) {
+          const n = parseInt(e.key, 10);
+          if (n >= 1 && n <= 7) {
+            e.preventDefault();
+            selectReason(n - 1);
+          }
+        }
+      } else if (STATE.step === 2) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          goBack();
+          return;
+        }
+        const n = parseInt(e.key, 10);
+        if (n === 1) { e.preventDefault(); selectLang('fr'); }
+        if (n === 2) { e.preventDefault(); selectLang('en'); }
+      } else if (STATE.step === 3) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          reset();
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          goBack();
+          return;
+        }
+      }
+    });
+
+    // ===== Minimal tests =====
+    function assert(name, condition) {
+      if (!condition) throw new Error(name);
+    }
+
+    function runTests() {
+      const logs = [];
+      const log = (s) => logs.push(s);
+
+      const original = {
+        step: STATE.step,
+        reasonIndex: STATE.reasonIndex,
+        lang: STATE.lang,
+        emailText: STATE.emailText,
+        emailHTML: STATE.emailHTML
+      };
+
+      try {
+        log('[ RUN ]');
+
+        assert('REASONS length should be 7', REASONS.length === 7);
+        assert('Each reason should have fr/en', REASONS.every(r => r.fr && r.en));
+
+        // Build a sample message (EN, reason 1)
+        STATE.reasonIndex = 0;
+        STATE.lang = 'en';
+        buildMessage();
+
+        assert('Message first line is not empty', STATE.emailText.split('\n')[0].trim().length > 0);
+        assert('Message does not start with "Subject:" label', !STATE.emailText.startsWith('Subject:'));
+        assert('Message contains blank line after subject', STATE.emailText.includes('\n\n'));
+        assert('Portal included in TEXT for non-lost/stolen', STATE.emailText.includes(LINKS.portal));
+        assert('Portal included in HTML for non-lost/stolen', STATE.emailHTML.includes(`href="${LINKS.portal}"`));
+
+        // Lost/stolen must not mention portal anywhere
+        STATE.reasonIndex = 5;
+        STATE.lang = 'en';
+        buildMessage();
+        assert('Lost/stolen TEXT should not include portal link', !STATE.emailText.includes(LINKS.portal));
+        assert('Lost/stolen HTML should not include portal link', !STATE.emailHTML.includes(LINKS.portal));
+        assert('Lost/stolen should not mention customer portal', !/customer portal/i.test(STATE.emailText));
+        assert('Lost/stolen should not mention Stripe portal in FR label', !/Portail client/i.test(STATE.emailText));
+
+        // FR should contain the FR contact link, EN should contain EN contact link
+        STATE.reasonIndex = 0;
+        STATE.lang = 'fr';
+        buildMessage();
+        assert('FR message contains FR contact link', STATE.emailText.includes(LINKS.contactFR));
+        assert('FR message does not contain EN contact link', !STATE.emailText.includes(LINKS.contactEN));
+
+        STATE.lang = 'en';
+        buildMessage();
+        assert('EN message contains EN contact link', STATE.emailText.includes(LINKS.contactEN));
+        assert('EN message does not contain FR contact link', !STATE.emailText.includes(LINKS.contactFR));
+
+        const canUseClipboardApi = !!(navigator.clipboard && typeof navigator.clipboard.write === 'function' && window.isSecureContext && typeof window.ClipboardItem !== 'undefined');
+        log(`[ INFO ] Rich Clipboard API available: ${canUseClipboardApi}`);
+
+        log('[ PASS ] All tests passed.');
+        els.testlog.textContent = logs.join('\n');
+      } catch (err) {
+        log(`[ FAIL ] ${err && err.message ? err.message : String(err)}`);
+        els.testlog.textContent = logs.join('\n');
+        setStatus('Tests failed');
+        showNote('TEST FAIL');
+      } finally {
+        STATE.step = original.step;
+        STATE.reasonIndex = original.reasonIndex;
+        STATE.lang = original.lang;
+        STATE.emailText = original.emailText;
+        STATE.emailHTML = original.emailHTML;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedPref = localStorage.getItem('themePreference') || 'system';
+      applyTheme(savedPref);
+      reset();
+      runTests();
+    });
+  </script>
+</body>
+</html>
