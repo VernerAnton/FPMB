@@ -477,11 +477,16 @@
 
     // ===== App State =====
     const STATE = {
-      step: 1,          // 1 reason, 2 language, 3 result
+      tool: null,       // null (selector), 'fpmb', 'htmlrunner'
+      step: 1,          // 1 reason, 2 language, 3 result (for FPMB)
       reasonIndex: null,
       lang: null,
       emailText: '',
-      emailHTML: ''
+      emailHTML: '',
+      // HTML Runner state
+      autoCopy: true,   // Auto-copy toggle for HTML Runner
+      htmlInput: '',    // Raw HTML input
+      htmlRendered: ''  // Sanitized/rendered HTML
     };
 
     // ===== Hardcoded links (DO NOT CHANGE) =====
@@ -637,10 +642,262 @@
       els.footerButtons.appendChild(b);
     }
 
+    // ===== HTML Runner Utilities =====
+    function sanitizeHTML(html) {
+      // Simple HTML sanitizer - removes dangerous tags and attributes
+      let clean = String(html || '');
+
+      // Remove script tags and content
+      clean = clean.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+      // Remove dangerous tags
+      const dangerousTags = ['iframe', 'object', 'embed', 'style', 'link', 'meta', 'base'];
+      dangerousTags.forEach(tag => {
+        const regex = new RegExp(`<${tag}\\b[^<]*(?:(?!<\\/${tag}>)<[^<]*)*<\\/${tag}>`, 'gi');
+        clean = clean.replace(regex, '');
+        clean = clean.replace(new RegExp(`<${tag}[^>]*>`, 'gi'), '');
+      });
+
+      // Remove event handlers (on* attributes)
+      clean = clean.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+      clean = clean.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
+
+      // Remove javascript: in hrefs
+      clean = clean.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
+
+      return clean;
+    }
+
+    function extractPlainText(html) {
+      // Extract plain text from HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      return temp.textContent || temp.innerText || '';
+    }
+
+    // Auto-copy timer for HTML Runner
+    let autoCopyTimer = null;
+    function scheduleAutoCopy() {
+      if (!STATE.autoCopy) return;
+      clearTimeout(autoCopyTimer);
+      autoCopyTimer = setTimeout(() => {
+        if (STATE.htmlRendered) {
+          copyRichToClipboard(STATE.htmlRendered, extractPlainText(STATE.htmlRendered));
+        }
+      }, 500);
+    }
+
+    // ===== Tool Selector Screen =====
+    function renderToolSelector() {
+      els.stepIndicator.textContent = '[ SELECT TOOL ]';
+      setStatus('Choose a tool');
+      els.hint.textContent = 'Press 1 for FPMB, 2 for HTML Runner';
+
+      const list = document.createElement('div');
+      list.className = 'list';
+
+      // Tool 1: FPMB
+      const fpmb = document.createElement('div');
+      fpmb.className = 'choice';
+      fpmb.tabIndex = 0;
+      fpmb.setAttribute('role', 'button');
+      fpmb.setAttribute('aria-label', '1. FPMB - Failed Payment Message Builder');
+      fpmb.innerHTML = `
+        <div class="num">1</div>
+        <div>
+          <div style="font-weight:bold;">FPMB</div>
+          <div style="font-size:0.85em;opacity:0.8;margin-top:0.25rem;">Failed Payment Message Builder</div>
+        </div>
+      `;
+      fpmb.addEventListener('click', () => selectTool('fpmb'));
+      fpmb.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectTool('fpmb');
+        }
+      });
+
+      // Tool 2: HTML Runner
+      const htmlrunner = document.createElement('div');
+      htmlrunner.className = 'choice';
+      htmlrunner.tabIndex = 0;
+      htmlrunner.setAttribute('role', 'button');
+      htmlrunner.setAttribute('aria-label', '2. HTML Runner - Render and Copy HTML');
+      htmlrunner.innerHTML = `
+        <div class="num">2</div>
+        <div>
+          <div style="font-weight:bold;">HTML Runner</div>
+          <div style="font-size:0.85em;opacity:0.8;margin-top:0.25rem;">Render & Copy HTML</div>
+        </div>
+      `;
+      htmlrunner.addEventListener('click', () => selectTool('htmlrunner'));
+      htmlrunner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectTool('htmlrunner');
+        }
+      });
+
+      list.appendChild(fpmb);
+      list.appendChild(htmlrunner);
+
+      els.screen.innerHTML = '';
+      els.screen.appendChild(list);
+    }
+
+    function selectTool(tool) {
+      STATE.tool = tool;
+      document.title = tool === 'fpmb' ? 'Failed Payment Message Builder' : 'HTML Runner';
+      setStatus(`Selected: ${tool === 'fpmb' ? 'FPMB' : 'HTML Runner'}`);
+      showNote('SELECTED');
+      render();
+    }
+
+    // ===== HTML Runner Screen =====
+    function renderHTMLRunner() {
+      els.stepIndicator.textContent = '[ HTML RUNNER ]';
+      setStatus('Paste HTML code');
+      els.hint.textContent = 'Paste HTML → renders instantly. Esc to go back to tools.';
+
+      const container = document.createElement('div');
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '1rem';
+
+      // Auto-copy toggle at top
+      const toggleContainer = document.createElement('div');
+      toggleContainer.style.display = 'flex';
+      toggleContainer.style.justifyContent = 'space-between';
+      toggleContainer.style.alignItems = 'center';
+      toggleContainer.style.marginBottom = '0.5rem';
+
+      const toggleLabel = document.createElement('div');
+      toggleLabel.style.fontWeight = 'bold';
+      toggleLabel.style.fontSize = '0.85rem';
+      toggleLabel.textContent = `Auto Copy: ${STATE.autoCopy ? 'ON' : 'OFF'}`;
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.textContent = STATE.autoCopy ? '[ ON ]' : '[ OFF ]';
+      toggleBtn.style.minWidth = '5rem';
+      toggleBtn.addEventListener('click', () => {
+        STATE.autoCopy = !STATE.autoCopy;
+        showNote(STATE.autoCopy ? 'AUTO ON' : 'AUTO OFF');
+        renderHTMLRunner();
+      });
+
+      toggleContainer.appendChild(toggleLabel);
+      toggleContainer.appendChild(toggleBtn);
+
+      // Input textarea
+      const inputLabel = document.createElement('div');
+      inputLabel.style.fontWeight = 'bold';
+      inputLabel.style.fontSize = '0.85rem';
+      inputLabel.style.marginBottom = '0.25rem';
+      inputLabel.textContent = 'HTML Input:';
+
+      const textarea = document.createElement('textarea');
+      textarea.value = STATE.htmlInput;
+      textarea.placeholder = 'Paste your HTML code here...\n\nExample:\n<p><strong>Bold text</strong> and <a href="#">links</a></p>\n<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>';
+      textarea.style.minHeight = '180px';
+      textarea.addEventListener('input', (e) => {
+        STATE.htmlInput = e.target.value;
+        STATE.htmlRendered = sanitizeHTML(STATE.htmlInput);
+        renderHTMLRunner();
+        scheduleAutoCopy();
+      });
+
+      // Preview
+      const previewLabel = document.createElement('div');
+      previewLabel.style.fontWeight = 'bold';
+      previewLabel.style.fontSize = '0.85rem';
+      previewLabel.style.marginBottom = '0.25rem';
+      previewLabel.style.marginTop = '0.5rem';
+      previewLabel.textContent = 'Preview:';
+
+      const preview = document.createElement('div');
+      preview.className = 'email-preview';
+      preview.innerHTML = STATE.htmlRendered || '<em style="opacity:0.6;">(preview will appear here)</em>';
+      preview.style.minHeight = '180px';
+
+      container.appendChild(toggleContainer);
+      container.appendChild(inputLabel);
+      container.appendChild(textarea);
+      container.appendChild(previewLabel);
+      container.appendChild(preview);
+
+      els.screen.innerHTML = '';
+      els.screen.appendChild(container);
+
+      // Footer buttons
+      clearFooterButtons();
+      addFooterButton('Copy Rich HTML', () => {
+        if (STATE.htmlRendered) {
+          copyRichToClipboard(STATE.htmlRendered, extractPlainText(STATE.htmlRendered));
+        } else {
+          showNote('EMPTY');
+        }
+      });
+      addFooterButton('Copy Plain Text', () => {
+        const plainText = extractPlainText(STATE.htmlRendered);
+        if (plainText) {
+          // Copy plain text only
+          try {
+            const tmp = document.createElement('textarea');
+            tmp.value = plainText;
+            tmp.setAttribute('readonly', '');
+            tmp.style.position = 'fixed';
+            tmp.style.top = '0';
+            tmp.style.left = '-9999px';
+            tmp.style.opacity = '0';
+            document.body.appendChild(tmp);
+            tmp.focus();
+            tmp.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(tmp);
+            setStatus(ok ? 'Copied (plain text)' : 'Copy failed');
+            showNote(ok ? 'COPIED' : 'FAILED');
+          } catch {
+            setStatus('Copy failed');
+            showNote('FAILED');
+          }
+        } else {
+          showNote('EMPTY');
+        }
+      });
+      addFooterButton('Clear', () => {
+        STATE.htmlInput = '';
+        STATE.htmlRendered = '';
+        renderHTMLRunner();
+        showNote('CLEARED');
+      });
+      addFooterButton('Back to Tools', () => {
+        STATE.tool = null;
+        document.title = 'Failed Payment Message Builder';
+        render();
+      });
+
+      // Focus textarea
+      setTimeout(() => textarea.focus(), 100);
+    }
+
+    // ===== Main Render Function =====
     function render() {
       clearFooterButtons();
 
-      if (STATE.step === 1) {
+      // Tool selector (no tool selected yet)
+      if (STATE.tool === null) {
+        renderToolSelector();
+        return;
+      }
+
+      // HTML Runner tool
+      if (STATE.tool === 'htmlrunner') {
+        renderHTMLRunner();
+        return;
+      }
+
+      // FPMB tool (existing logic)
+      if (STATE.tool === 'fpmb' && STATE.step === 1) {
         setStep(1);
         setStatus('Choose reason');
         els.hint.textContent = 'Tip: press 1–7. Or click a row. Esc does nothing here.';
@@ -680,7 +937,7 @@
         els.screen.appendChild(list);
       }
 
-      if (STATE.step === 2) {
+      if (STATE.tool === 'fpmb' && STATE.step === 2) {
         setStep(2);
         setStatus('Choose language');
         els.hint.textContent = 'Press 1 for French, 2 for English. Esc to go back.';
@@ -723,7 +980,7 @@
         addFooterButton('Back (Esc)', () => goBack());
       }
 
-      if (STATE.step === 3) {
+      if (STATE.tool === 'fpmb' && STATE.step === 3) {
         setStep(3);
         // Note: clipboard may be blocked in sandbox. Status is set by copyRichToClipboard.
         els.hint.textContent = 'Press Enter to start a new message. Esc goes back to language.';
@@ -980,24 +1237,38 @@
     }
 
     function goBack() {
-      if (STATE.step === 3) {
-        setStep(2);
-        render();
-        return;
-      }
-      if (STATE.step === 2) {
-        setStep(1);
-        render();
-        return;
+      if (STATE.tool === 'fpmb') {
+        if (STATE.step === 3) {
+          setStep(2);
+          render();
+          return;
+        }
+        if (STATE.step === 2) {
+          setStep(1);
+          render();
+          return;
+        }
+        if (STATE.step === 1) {
+          // Go back to tool selector
+          STATE.tool = null;
+          document.title = 'Failed Payment Message Builder';
+          render();
+          return;
+        }
       }
     }
 
     function reset() {
+      // Reset to tool selector
+      STATE.tool = null;
       STATE.step = 1;
       STATE.reasonIndex = null;
       STATE.lang = null;
       STATE.emailText = '';
       STATE.emailHTML = '';
+      STATE.htmlInput = '';
+      STATE.htmlRendered = '';
+      document.title = 'Failed Payment Message Builder';
       setStatus('Ready');
       showNote('READY');
       render();
@@ -1011,33 +1282,87 @@
         : '';
       const isTyping = tag === 'textarea' || tag === 'input' || tag === 'select';
 
-      if (STATE.step === 1) {
+      // Tool Selector (no tool selected)
+      if (STATE.tool === null) {
         if (!isTyping) {
           const n = parseInt(e.key, 10);
-          if (n >= 1 && n <= 7) {
+          if (n === 1) {
             e.preventDefault();
-            selectReason(n - 1);
+            selectTool('fpmb');
+          } else if (n === 2) {
+            e.preventDefault();
+            selectTool('htmlrunner');
           }
         }
-      } else if (STATE.step === 2) {
-        if (e.key === 'Escape') {
+        return;
+      }
+
+      // HTML Runner tool
+      if (STATE.tool === 'htmlrunner') {
+        // Escape: go back to tool selector
+        if (e.key === 'Escape' && !isTyping) {
           e.preventDefault();
-          goBack();
+          STATE.tool = null;
+          document.title = 'Failed Payment Message Builder';
+          render();
           return;
         }
-        const n = parseInt(e.key, 10);
-        if (n === 1) { e.preventDefault(); selectLang('fr'); }
-        if (n === 2) { e.preventDefault(); selectLang('en'); }
-      } else if (STATE.step === 3) {
-        if (e.key === 'Enter') {
+        // Ctrl/Cmd + K: toggle auto-copy
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
           e.preventDefault();
-          reset();
+          STATE.autoCopy = !STATE.autoCopy;
+          showNote(STATE.autoCopy ? 'AUTO ON' : 'AUTO OFF');
+          renderHTMLRunner();
           return;
         }
-        if (e.key === 'Escape') {
+        // Ctrl/Cmd + L: clear input
+        if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
           e.preventDefault();
-          goBack();
+          STATE.htmlInput = '';
+          STATE.htmlRendered = '';
+          renderHTMLRunner();
+          showNote('CLEARED');
           return;
+        }
+        return;
+      }
+
+      // FPMB tool
+      if (STATE.tool === 'fpmb') {
+        if (STATE.step === 1) {
+          // Escape: go back to tool selector
+          if (e.key === 'Escape' && !isTyping) {
+            e.preventDefault();
+            goBack();
+            return;
+          }
+          if (!isTyping) {
+            const n = parseInt(e.key, 10);
+            if (n >= 1 && n <= 7) {
+              e.preventDefault();
+              selectReason(n - 1);
+            }
+          }
+        } else if (STATE.step === 2) {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            goBack();
+            return;
+          }
+          const n = parseInt(e.key, 10);
+          if (n === 1) { e.preventDefault(); selectLang('fr'); }
+          if (n === 2) { e.preventDefault(); selectLang('en'); }
+        } else if (STATE.step === 3) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            reset();
+            return;
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            goBack();
+            return;
+          }
         }
       }
     });
@@ -1052,6 +1377,7 @@
       const log = (s) => logs.push(s);
 
       const original = {
+        tool: STATE.tool,
         step: STATE.step,
         reasonIndex: STATE.reasonIndex,
         lang: STATE.lang,
@@ -1061,6 +1387,9 @@
 
       try {
         log('[ RUN ]');
+
+        // Set to FPMB tool for tests
+        STATE.tool = 'fpmb';
 
         assert('REASONS length should be 7', REASONS.length === 7);
         assert('Each reason should have fr/en', REASONS.every(r => r.fr && r.en));
@@ -1108,6 +1437,7 @@
         setStatus('Tests failed');
         showNote('TEST FAIL');
       } finally {
+        STATE.tool = original.tool;
         STATE.step = original.step;
         STATE.reasonIndex = original.reasonIndex;
         STATE.lang = original.lang;
