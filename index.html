@@ -818,6 +818,7 @@
       preview.className = 'email-preview';
       preview.innerHTML = STATE.htmlRendered || '<em style="opacity:0.6;">(preview will appear here)</em>';
       preview.style.minHeight = '180px';
+      preview.style.whiteSpace = 'pre-wrap'; // Preserve newlines and spaces
 
       container.appendChild(toggleContainer);
       container.appendChild(inputLabel);
