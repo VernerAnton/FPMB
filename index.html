@@ -665,9 +665,9 @@
       // Remove javascript: in hrefs
       clean = clean.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
 
-      // Preserve empty lines: Convert sequences of 2+ newlines into empty paragraph tags
+      // Preserve empty lines: Convert sequences of 2+ newlines into a single br tag
       // This ensures empty lines are preserved when pasted into rich text editors like Intercom
-      clean = clean.replace(/\n\n+/g, '<p><br></p>');
+      clean = clean.replace(/\n\n+/g, '<br>');
 
       return clean;
     }
