@@ -1161,7 +1161,7 @@
           : `You may also try another payment method (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex, etc.). To do this, access your customer portal via the link below.`);
       }
 
-      const bulletsHTML = `<ul>${bullets.map(b => `<li>${b.replace(/portail client/g, '<strong>portail client</strong>').replace(/customer portal/g, '<strong>customer portal</strong>')}</li>`).join('')}</ul>`;
+      const bulletsHTML = `<ul style="margin: 0.25rem 0 1rem 1.6rem; padding: 0;">${bullets.map(b => `<li style="margin: 0.35rem 0;">${b.replace(/portail client/g, '<strong>portail client</strong>').replace(/customer portal/g, '<strong>customer portal</strong>')}</li>`).join('')}</ul>`;
 
       // Signature formatting
       const sigLines = signature.split('\n').map(esc);
@@ -1179,7 +1179,7 @@
         cancelHTML,
         urgencyHTML,
         signatureHTML
-      ].filter(Boolean).join('');
+      ].filter(Boolean).join('<p style="margin: 0 0 0.9rem 0;"></p>');
     }
 
     async function copyRichToClipboard(html, text) {
