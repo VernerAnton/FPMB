@@ -1124,8 +1124,8 @@
 
       // Cancel section with password reset link as "ici / here" (more email-like)
       const cancelHTML = (lang === 'fr')
-        ? `<p><strong>Pour annuler votre abonnement :</strong> Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser <a href="${LINKS.resetFR}">ici</a>.</p>`
-        : `<p><strong>To cancel your membership:</strong> Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it <a href="${LINKS.resetEN}">here</a>.</p>`;
+        ? `<p style="margin-bottom: 0.9rem;"><strong>Pour annuler votre abonnement :</strong> Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser <a href="${LINKS.resetFR}">ici</a>.</p>`
+        : `<p style="margin-bottom: 0.9rem;"><strong>To cancel your membership:</strong> Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it <a href="${LINKS.resetEN}">here</a>.</p>`;
 
       // Contact link as "nous contacter / contact us"
       const contactHTML = (lang === 'fr')
@@ -1134,18 +1134,18 @@
 
       // Urgency with embedded contact link
       const urgencyHTML = (lang === 'fr')
-        ? `<p><strong>Il est important de résoudre ce problème rapidement ;</strong> sinon Stripe continuera à tenter le paiement en utilisant les informations existantes. Si vous avez des questions ou des préoccupations, veuillez ${contactHTML}. Nous sommes toujours là pour vous aider. Merci pour votre coopération&nbsp;!</p>`
-        : `<p><strong>It is important to resolve the issue promptly;</strong> otherwise, Stripe will continue to attempt payment using the existing information. If you have any questions or concerns, please ${contactHTML}. We are always here to assist. Thank you for your cooperation!</p>`;
+        ? `<p style="margin-bottom: 0.9rem;"><strong>Il est important de résoudre ce problème rapidement ;</strong> sinon Stripe continuera à tenter le paiement en utilisant les informations existantes. Si vous avez des questions ou des préoccupations, veuillez ${contactHTML}. Nous sommes toujours là pour vous aider. Merci pour votre coopération&nbsp;!</p>`
+        : `<p style="margin-bottom: 0.9rem;"><strong>It is important to resolve the issue promptly;</strong> otherwise, Stripe will continue to attempt payment using the existing information. If you have any questions or concerns, please ${contactHTML}. We are always here to assist. Thank you for your cooperation!</p>`;
 
       // Portal section as "Portail client" link when allowed
       const portalHTML = includePortal
         ? (lang === 'fr'
-            ? `<p><strong>Visitez votre compte :</strong> <a href="${LINKS.portal}">Portail client</a></p>`
-            : `<p><strong>Visit your account:</strong> <a href="${LINKS.portal}">Customer Portal</a></p>`)
+            ? `<p style="margin-bottom: 0.9rem;"><strong>Visitez votre compte :</strong> <a href="${LINKS.portal}">Portail client</a></p>`
+            : `<p style="margin-bottom: 0.9rem;"><strong>Visit your account:</strong> <a href="${LINKS.portal}">Customer Portal</a></p>`)
         : '';
 
-      const keepHeaderHTML = `<p><strong>${esc(keepHeader)}</strong></p>`;
-      const reasonLineHTML = `<p><em>${esc(reason[lang].reasonLine)}</em></p>`;
+      const keepHeaderHTML = `<p style="margin-bottom: 0.9rem;"><strong>${esc(keepHeader)}</strong></p>`;
+      const reasonLineHTML = `<p style="margin-bottom: 0.9rem;"><em>${esc(reason[lang].reasonLine)}</em></p>`;
 
       // Bullets (email-like)
       const bullets = [];
@@ -1165,13 +1165,13 @@
 
       // Signature formatting
       const sigLines = signature.split('\n').map(esc);
-      const signatureHTML = `<p>${sigLines.join('<br>')}</p>`;
+      const signatureHTML = `<p style="margin-bottom: 0.9rem;">${sigLines.join('<br>')}</p>`;
 
       // Subject included in body (bold), no "Subject:" label
       STATE.emailHTML = [
         `<div class="subjectline">${esc(subjectLine)}</div>`,
-        `<p><strong>${esc(greeting)}</strong></p>`,
-        `<p>${introHTML}</p>`,
+        `<p style="margin-bottom: 0.9rem;"><strong>${esc(greeting)}</strong></p>`,
+        `<p style="margin-bottom: 0.9rem;">${introHTML}</p>`,
         reasonLineHTML,
         keepHeaderHTML,
         bulletsHTML,
@@ -1179,7 +1179,7 @@
         cancelHTML,
         urgencyHTML,
         signatureHTML
-      ].join('');
+      ].filter(Boolean).join('');
     }
 
     async function copyRichToClipboard(html, text) {
