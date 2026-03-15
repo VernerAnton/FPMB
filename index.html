@@ -676,10 +676,16 @@
     }
 
     function extractPlainText(html) {
-      // Extract plain text from HTML
       const temp = document.createElement('div');
-      temp.innerHTML = html;
-      return temp.textContent || temp.innerText || '';
+      temp.innerHTML = html.replace(/<\/p>/gi, '</p>\n\n').replace(/<br\s*\/?>/gi, '\n');
+      return (temp.textContent || temp.innerText || '').trim();
+    }
+
+    function htmlToRichEditorSafe(html) {
+      return html
+        .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1<br><br>')
+        .replace(/(<br\s*\/?>){3,}/gi, '<br><br>')
+        .trim();
     }
 
     // Auto-copy timer for HTML Runner
@@ -689,7 +695,7 @@
       clearTimeout(autoCopyTimer);
       autoCopyTimer = setTimeout(() => {
         if (STATE.htmlRendered) {
-          copyRichToClipboard(STATE.htmlRendered, extractPlainText(STATE.htmlRendered));
+          copyRichToClipboard(htmlToRichEditorSafe(STATE.htmlRendered), extractPlainText(STATE.htmlRendered));
         }
       }, 500);
     }
@@ -839,7 +845,7 @@
       clearFooterButtons();
       addFooterButton('Copy Rich HTML', () => {
         if (STATE.htmlRendered) {
-          copyRichToClipboard(STATE.htmlRendered, extractPlainText(STATE.htmlRendered));
+          copyRichToClipboard(htmlToRichEditorSafe(STATE.htmlRendered), extractPlainText(STATE.htmlRendered));
         } else {
           showNote('EMPTY');
         }
