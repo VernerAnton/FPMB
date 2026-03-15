@@ -272,6 +272,10 @@
     .email-preview strong { font-weight: bold; }
     .email-preview em { font-style: italic; }
 
+    /* HTML Runner: email-like paragraph spacing */
+    .html-runner-preview { line-height: 1.5; }
+    .html-runner-preview p { margin: 0 0 1em 0; }
+
     .actions {
       display:flex;
       gap: 0.75rem;
@@ -818,10 +822,9 @@
       previewLabel.textContent = 'Preview:';
 
       const preview = document.createElement('div');
-      preview.className = 'email-preview';
+      preview.className = 'email-preview html-runner-preview';
       preview.innerHTML = STATE.htmlRendered || '<em style="opacity:0.6;">(preview will appear here)</em>';
       preview.style.minHeight = '180px';
-      preview.style.whiteSpace = 'pre-wrap'; // Preserve newlines and spaces
 
       container.appendChild(toggleContainer);
       container.appendChild(inputLabel);
