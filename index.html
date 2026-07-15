@@ -499,7 +499,8 @@
       resetFR: 'https://app.imagineclarity.com/fr/mdp/nouveau?plan=year&submit=true',
       resetEN: 'https://app.imagineclarity.com/password/new',
       contactFR: 'https://app.imagineclarity.com/fr/contact',
-      contactEN: 'https://app.imagineclarity.com/contact'
+      contactEN: 'https://app.imagineclarity.com/contact',
+      coursesFR: 'https://us11.campaign-archive.com/?e=__test_email__&u=55630375241ac6041814fcdab&id=2d5e53c211'
     };
 
     // Human-label portal section (only when allowed)
@@ -1085,6 +1086,10 @@
       const bullet3 = includePortal ? OPTIONAL_PORTAL_BULLET[lang] : '';
       const portalSection = includePortal ? PORTAL_SECTION[lang] : '';
 
+      const coursesReminder = lang === 'fr'
+        ? `Besoin d'un rappel de ce que nous offrons ? Retrouvez notre sélection de formations ici : ${LINKS.coursesFR}`
+        : '';
+
       const cancel = lang === 'fr'
         ? `Pour annuler votre abonnement : Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser ici : ${LINKS.resetFR}`
         : `To cancel your membership: Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it here: ${LINKS.resetEN}`;
@@ -1118,6 +1123,10 @@
         lines.push(portalSection);
         lines.push('');
       }
+      if (coursesReminder) {
+        lines.push(coursesReminder);
+        lines.push('');
+      }
       lines.push(cancel);
       lines.push('');
       lines.push(urgency);
@@ -1143,6 +1152,11 @@
       const introHTML = lang === 'fr'
         ? `Un problème est survenu avec le renouvellement de votre abonnement Imagine Clarity. Imagine Clarity utilise <a href="${stripeUrl}">Stripe pour les paiements en ligne</a>, et <strong>plusieurs options sont disponibles pour résoudre ce problème</strong>. Veuillez agir dès aujourd'hui.`
         : `There is an issue with your Imagine Clarity subscription renewal. Imagine Clarity uses <a href="${stripeUrl}">Stripe for online payments</a>, and <strong>several options are available to resolve this</strong>. Please take action today.`;
+
+      // Reminder of course offerings, embedded link, French only
+      const coursesReminderHTML = (lang === 'fr')
+        ? `<p style="margin-bottom: 0.9rem;">Besoin d'un rappel de ce que nous offrons ? Retrouvez notre sélection de formations <a href="${LINKS.coursesFR}">ici</a>.</p>`
+        : '';
 
       // Cancel section with password reset link as "ici / here" (more email-like)
       const cancelHTML = (lang === 'fr')
@@ -1198,6 +1212,7 @@
         keepHeaderHTML,
         bulletsHTML,
         portalHTML,
+        coursesReminderHTML,
         cancelHTML,
         urgencyHTML,
         signatureHTML
