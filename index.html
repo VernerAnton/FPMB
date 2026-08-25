@@ -569,30 +569,57 @@
     };
 
     // ===== Hardcoded links (DO NOT CHANGE) =====
-    const LINKS = {
+    // Current message set: links to Imagine Clarity account settings (no Stripe portal).
+    const LINKS = Object.freeze({
+      settingsEN: 'https://app.imagineclarity.com/settings',
+      settingsFR: 'https://app.imagineclarity.com/fr/parametres',
+      resetEN: 'https://app.imagineclarity.com/password/new',
+      resetFR: 'https://app.imagineclarity.com/fr/mdp/nouveau',
+      contactEN: 'https://app.imagineclarity.com/contact',
+      contactFR: 'https://app.imagineclarity.com/fr/contact',
+      homeEN: 'https://app.imagineclarity.com/',
+      homeFR: 'https://app.imagineclarity.com/fr',
+      // Hosted Mailchimp archive of the course selection (FR only for now).
+      coursesFR: 'https://us11.campaign-archive.com/?e=[UNIQID]&u=55630375241ac6041814fcdab&id=a5596a047b'
+    });
+
+    // Links frozen alongside the archived v1 message set, so edits to LINKS above
+    // can never change what v1 renders.
+    const LINKS_V1 = Object.freeze({
       portal: 'https://billing.stripe.com/p/login/00g5m9a4pbOEd4k7ss',
       resetFR: 'https://app.imagineclarity.com/fr/mdp/nouveau?plan=year&submit=true',
       resetEN: 'https://app.imagineclarity.com/password/new',
       contactFR: 'https://app.imagineclarity.com/fr/contact',
       contactEN: 'https://app.imagineclarity.com/contact',
       coursesFR: 'https://us11.campaign-archive.com/?e=__test_email__&u=55630375241ac6041814fcdab&id=2d5e53c211'
-    };
+    });
 
-    // Human-label portal section (only when allowed)
+    // Human-label portal section (v1 only, and only when allowed)
     const PORTAL_SECTION = {
-      fr: `Portail client (Stripe) : ${LINKS.portal}`,
-      en: `Customer Portal (Stripe): ${LINKS.portal}`
+      fr: `Portail client (Stripe) : ${LINKS_V1.portal}`,
+      en: `Customer Portal (Stripe): ${LINKS_V1.portal}`
     };
 
-    // Optional 3rd bullet (only when portal is allowed)
+    // Optional 3rd bullet (v1 only, and only when portal is allowed)
     const OPTIONAL_PORTAL_BULLET = {
       fr: 'Vous pouvez également essayer un autre moyen de paiement via le portail client.',
       en: 'You may also try another payment method via the customer portal.'
     };
 
-    // ===== Reasons (7) — human labels + exact variable lines from your rulebook =====
+    // Recursively freeze an object graph so archived content can't be mutated.
+    function deepFreeze(obj) {
+      Object.getOwnPropertyNames(obj).forEach(key => {
+        const val = obj[key];
+        if (val && typeof val === 'object') deepFreeze(val);
+      });
+      return Object.freeze(obj);
+    }
+
+    // ===== v1 reasons (ARCHIVED — do not edit) =====
+    // The original 8-reason set, kept verbatim so previously sent wording stays
+    // reproducible. Rendered by buildMessageV1() using LINKS_V1.
     // Portal is NOT allowed for lost/stolen.
-    const REASONS = [
+    const REASONS_V1 = deepFreeze([
       {
         key: 'card_expired',
         label: 'Card expired',
@@ -697,25 +724,184 @@
           secondBullet: 'Retry and complete the payment without closing the page.'
         }
       }
+    ]);
+
+    // ===== Current reasons (6) =====
+    // Body copy is authored in the same light markdown as the source documents:
+    // **bold** and [text](url). buildMessageV2() renders it to both HTML and text.
+    //
+    // Shared wording lives in COMMON; a reason only declares what differs from it.
+    const COMMON = {
+      en: {
+        subject: 'Resolve or Cancel - Action required. Your Imagine Clarity Subscription.',
+        greeting: 'Dear Imagine Clarity customer,',
+        intro: 'There is an issue with your Imagine Clarity subscription renewal. Several options are available to resolve this!',
+        accountLine: `Go to your [Imagine Clarity Account setting](${LINKS.settingsEN}) here. Did you forget your password? Reset it [here](${LINKS.resetEN}).`,
+        keepHeader: '**To keep your current (lower) subscription price:**',
+        listType: 'ol',
+        cancel: '**To cancel your membership:** Easy to do either at your account settings or reply to this message to request cancellation.',
+        questions: `**Any questions or concerns?** Please [contact us](${LINKS.contactEN}). We are always here to assist!`,
+        closing: 'Please resolve the issue promptly; Imagine Clarity uses secure Stripe for online payments, and it will continue to attempt payment using the existing information. -It\'s easy to resolve! Thank you very much for your cooperation.',
+        signOff: 'With best wishes,',
+        signature: `Anton\n[Imagine Clarity](${LINKS.homeEN}) Customer Care`
+      },
+      fr: {
+        subject: 'Résoudre ou annuler - Action requise. Votre abonnement Imagine Clarity.',
+        greeting: 'Cher client Imagine Clarity,',
+        intro: 'Un problème est survenu lors du renouvellement de votre abonnement Imagine Clarity. Plusieurs options s\'offrent à vous pour le résoudre !',
+        accountLine: `Accédez ici aux [paramètres de votre compte Imagine Clarity](${LINKS.settingsFR}). Vous avez oublié votre mot de passe ? Réinitialisez-le [ici](${LINKS.resetFR}).`,
+        keepHeader: '**Pour conserver votre tarif d\'abonnement actuel (plus avantageux) :**',
+        listType: 'ol',
+        cancel: '**Pour annuler votre abonnement :** c\'est simple, rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l\'annulation.',
+        questions: `**Des questions ou des préoccupations ?** N'hésitez pas à [nous contacter](${LINKS.contactFR}). Nous sommes toujours là pour vous aider !`,
+        closing: 'Merci de résoudre ce problème rapidement ; Imagine Clarity utilise la solution sécurisée Stripe pour les paiements en ligne, et celle-ci continuera de tenter le prélèvement avec les informations existantes. -C\'est facile à résoudre ! Merci beaucoup pour votre coopération.',
+        signOff: 'Bien cordialement,',
+        signature: `Anton\nService Client [Imagine Clarity](${LINKS.homeFR})`
+      }
+    };
+
+    // Reusable final step: reminder of the course catalogue (FR only for now — there
+    // is no English catalogue link yet).
+    const COURSES_STEP_FR = `Besoin d'un rappel des formations Imagine Clarity 🌟 ? Découvrez notre sélection de formations [ici](${LINKS.coursesFR}).`;
+
+    const REASONS = [
+      {
+        key: 'card_invalid_or_expired',
+        label: 'Card expired / Incorrect card number / Invalid card or account number',
+        en: {
+          greeting: 'Dear Imagine Clarity member,',
+          reasonLine: 'Reason for Payment Failure: The registered card has expired, or the card number is invalid.',
+          steps: [
+            'Update your card details and verify your billing address.',
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+          ]
+        },
+        fr: {
+          reasonLine: 'Motif de l\'échec du paiement : la carte enregistrée a expiré, ou le numéro de carte est invalide.',
+          steps: [
+            'Mettez à jour les informations de votre carte et vérifiez votre adresse de facturation.',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_FR
+          ]
+        }
+      },
+      {
+        key: 'bank_declined',
+        label: 'Payment declined by the issuing bank',
+        en: {
+          reasonLine: 'Reason for Payment Failure: The bank may have declined the transaction.',
+          steps: [
+            'Please check that your card details, including the billing address, are correct.',
+            'Please contact your bank to verify the payment.',
+            'You may also add / try another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+          ]
+        },
+        fr: {
+          reasonLine: 'Motif de l\'échec du paiement : votre banque a peut-être refusé la transaction.',
+          steps: [
+            'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
+            'Veuillez contacter votre banque pour valider le paiement.',
+            'Vous pouvez également ajouter / essayer un autre moyen de paiement. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_FR
+          ]
+        }
+      },
+      {
+        key: 'paypal_declined',
+        label: 'Payment declined by PayPal',
+        en: {
+          reasonLine: 'Reason for Payment Failure: PayPal declined the transaction.',
+          steps: [
+            'Please contact your PayPal to verify the payment.',
+            'Please check that your card details, including the billing address, are correct.',
+            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+          ]
+        },
+        fr: {
+          reasonLine: 'Motif de l\'échec du paiement : PayPal a refusé la transaction.',
+          steps: [
+            'Veuillez contacter PayPal pour valider le paiement.',
+            'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_FR
+          ]
+        }
+      },
+      {
+        key: 'three_d_secure_incomplete',
+        label: '3D Secure attempt incomplete',
+        en: {
+          reasonLine: 'Reason for Payment Failure: The 3D Secure authentication was not completed.',
+          steps: [
+            'Please check that your card details, including the billing address, are correct.',
+            'Please try again and complete the authentication step. If the issue persists, contact us or your bank for more information.',
+            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+          ]
+        },
+        fr: {
+          reasonLine: 'Motif de l\'échec du paiement : l\'authentification 3D Secure n\'a pas été finalisée.',
+          steps: [
+            'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
+            'Veuillez réessayer et compléter l\'étape d\'authentification. Si le problème persiste, contactez-nous ou contactez votre banque pour plus d\'informations.',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_FR
+          ]
+        }
+      },
+      {
+        // Structurally different from the rest: no account-settings line up top,
+        // a single bullet instead of numbered steps, and the account links moved
+        // into the cancellation paragraph.
+        key: 'lost_or_stolen',
+        label: 'Payment failed (card reported lost/stolen)',
+        en: {
+          intro: 'There is an issue with your Imagine Clarity subscription renewal. Imagine Clarity uses Stripe for online payments, and several options are available to resolve this.',
+          reasonLine: 'Reason for Payment Failure: The transaction was declined by your bank.',
+          accountLine: null,
+          keepHeader: '**To keep your membership:**',
+          listType: 'ul',
+          steps: ['Contact your bank for more information.'],
+          cancel: `**To cancel your membership:** Go to your [Imagine Clarity Account setting](${LINKS.settingsEN}) here. Did you forget your password? Reset it [here](${LINKS.resetEN}). Or reply to this message to request cancellation.`
+        },
+        fr: {
+          intro: 'Un problème est survenu lors du renouvellement de votre abonnement Imagine Clarity. Imagine Clarity utilise Stripe pour les paiements en ligne, et plusieurs options s\'offrent à vous pour le résoudre.',
+          reasonLine: 'Motif de l\'échec du paiement : la transaction a été refusée par votre banque.',
+          accountLine: null,
+          keepHeader: '**Pour conserver votre abonnement :**',
+          listType: 'ul',
+          steps: ['Contactez votre banque pour plus d\'informations.'],
+          cancel: `**Pour annuler votre abonnement :** accédez ici aux [paramètres de votre compte Imagine Clarity](${LINKS.settingsFR}). Vous avez oublié votre mot de passe ? Réinitialisez-le [ici](${LINKS.resetFR}). Ou répondez à ce message pour demander l'annulation.`
+        }
+      },
+      {
+        key: 'session_interrupted',
+        label: 'Session interrupted / timeout',
+        en: {
+          reasonLine: 'Reason for Payment Failure: The payment attempt could not be completed due to an interrupted session.',
+          steps: [
+            'Please check that your card details, including the billing address, are correct.',
+            'Retry and complete the payment without closing the page.',
+            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+          ]
+        },
+        fr: {
+          reasonLine: 'Motif de l\'échec du paiement : la tentative de paiement n\'a pas pu être finalisée en raison d\'une session interrompue.',
+          steps: [
+            'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
+            'Réessayez et finalisez le paiement sans fermer la page.',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_FR
+          ]
+        }
+      }
     ];
 
-    // Frozen snapshot of the original 8 reasons ("v1"), taken before any streamlining.
-    // Deep-cloned so future edits to REASONS above can never touch this copy, and
-    // deep-frozen so it can't be mutated by accident either.
-    function deepFreeze(obj) {
-      Object.getOwnPropertyNames(obj).forEach(key => {
-        const val = obj[key];
-        if (val && typeof val === 'object') deepFreeze(val);
-      });
-      return Object.freeze(obj);
-    }
-    const REASONS_V1 = deepFreeze(JSON.parse(JSON.stringify(REASONS)));
-
     // Selectable reason-list versions, shown side by side under the status line.
-    // Add future snapshots here (e.g. v2) and they appear in the bar automatically.
+    // Each version owns its renderer, so archived sets keep their original layout
+    // even as the current template changes.
     const VERSIONS = [
-      { id: 'current', label: 'Current', list: REASONS },
-      { id: 'v1', label: 'v1', list: REASONS_V1 }
+      { id: 'current', label: 'Current', list: REASONS, build: buildMessageV2 },
+      { id: 'v1', label: 'v1', list: REASONS_V1, build: buildMessageV1 }
     ];
 
     // Which reason list step 1 currently shows / builds from: live REASONS by default.
@@ -1140,6 +1326,10 @@
     }
 
     // ===== Version bar (reason-list snapshots, shown side by side) =====
+    function activeVersion() {
+      return VERSIONS.find(v => v.list === STATE.activeReasons) || VERSIONS[0];
+    }
+
     function renderVersionBar() {
       els.versionBar.innerHTML = '';
 
@@ -1210,7 +1400,95 @@
         .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$2');
     }
 
+    // Render the light markdown subset used by the current message set to HTML.
+    // Escaping runs first, which also turns "&" inside URLs into "&amp;" as an
+    // href attribute requires.
+    function mdToHTML(input) {
+      return escapeHtml(String(input))
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2">$1</a>');
+    }
+
+    // Same markdown, but keeping the link's label instead of its URL. Used for the
+    // plain-text signature, where a bare URL would read badly.
+    function mdLinkLabels(input) {
+      return String(input)
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '$1');
+    }
+
+    // Resolve a field for the active reason: the reason's own value if it declares
+    // one (including an explicit null, which means "omit this section"), else the
+    // shared COMMON value.
+    function field(reason, lang, name) {
+      const own = reason[lang];
+      return Object.prototype.hasOwnProperty.call(own, name) ? own[name] : COMMON[lang][name];
+    }
+
+    // Dispatch to the renderer belonging to the selected version.
     function buildMessage() {
+      activeVersion().build();
+    }
+
+    // ===== Current message set renderer =====
+    function buildMessageV2() {
+      const reason = STATE.activeReasons[STATE.reasonIndex];
+      const lang = STATE.lang;
+      const f = (name) => field(reason, lang, name);
+
+      const subject = f('subject');
+      const steps = f('steps') || [];
+      const listType = f('listType');
+      const accountLine = f('accountLine');
+
+      const sections = [
+        f('greeting'),
+        f('intro'),
+        f('reasonLine'),
+        accountLine,
+        f('keepHeader')
+      ];
+
+      // ---------- Plain text ----------
+      const lines = [subject, ''];
+      sections.filter(Boolean).forEach(s => {
+        lines.push(stripMarkdown(s));
+        lines.push('');
+      });
+      steps.forEach((s, i) => {
+        lines.push(`${listType === 'ol' ? `${i + 1}.` : '-'} ${stripMarkdown(s)}`);
+      });
+      lines.push('');
+      [f('cancel'), f('questions'), f('closing'), f('signOff')].forEach(s => {
+        lines.push(stripMarkdown(s));
+        lines.push('');
+      });
+      lines.push(mdLinkLabels(f('signature')));
+
+      STATE.emailText = lines.join('\n');
+
+      // ---------- HTML ----------
+      const P = 'style="margin-bottom: 0.9rem;"';
+      const parts = [`<div class="subjectline">${escapeHtml(subject)}</div>`];
+      sections.filter(Boolean).forEach(s => parts.push(`<p ${P}>${mdToHTML(s)}</p>`));
+
+      const listTag = listType === 'ol' ? 'ol' : 'ul';
+      parts.push(
+        `<${listTag} style="margin: 0.25rem 0 1rem 1.6rem; padding: 0;">` +
+        steps.map(s => `<li style="margin: 0.35rem 0;">${mdToHTML(s)}</li>`).join('') +
+        `</${listTag}>`
+      );
+
+      [f('cancel'), f('questions'), f('closing'), f('signOff')]
+        .forEach(s => parts.push(`<p ${P}>${mdToHTML(s)}</p>`));
+
+      parts.push(`<p ${P}>${f('signature').split('\n').map(mdToHTML).join('<br>')}</p>`);
+
+      STATE.emailHTML = parts.join('<p style="margin: 0 0 0.9rem 0;"></p>');
+    }
+
+    // ===== v1 message set renderer (ARCHIVED — do not edit) =====
+    function buildMessageV1() {
       const reason = STATE.activeReasons[STATE.reasonIndex];
       const lang = STATE.lang;
 
@@ -1241,16 +1519,16 @@
       const portalSection = includePortal ? PORTAL_SECTION[lang] : '';
 
       const coursesReminder = lang === 'fr'
-        ? `Besoin d'un rappel de ce que nous offrons ? Retrouvez notre sélection de formations ici : ${LINKS.coursesFR}`
+        ? `Besoin d'un rappel de ce que nous offrons ? Retrouvez notre sélection de formations ici : ${LINKS_V1.coursesFR}`
         : '';
 
       const cancel = lang === 'fr'
-        ? `Pour annuler votre abonnement : Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser ici : ${LINKS.resetFR}`
-        : `To cancel your membership: Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it here: ${LINKS.resetEN}`;
+        ? `Pour annuler votre abonnement : Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser ici : ${LINKS_V1.resetFR}`
+        : `To cancel your membership: Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it here: ${LINKS_V1.resetEN}`;
 
       const urgency = lang === 'fr'
-        ? `**Il est important de résoudre ce problème rapidement** ; sinon Stripe continuera à tenter le paiement en utilisant les informations existantes. Si vous avez des questions ou des préoccupations, veuillez nous contacter : ${LINKS.contactFR}. Nous sommes toujours là pour vous aider. Merci pour votre coopération !`
-        : `**It is important to resolve the issue promptly;** otherwise, Stripe will continue to attempt payment using the existing information. If you have any questions or concerns, please contact us: ${LINKS.contactEN}. We are always here to assist. Thank you for your cooperation!`;
+        ? `**Il est important de résoudre ce problème rapidement** ; sinon Stripe continuera à tenter le paiement en utilisant les informations existantes. Si vous avez des questions ou des préoccupations, veuillez nous contacter : ${LINKS_V1.contactFR}. Nous sommes toujours là pour vous aider. Merci pour votre coopération !`
+        : `**It is important to resolve the issue promptly;** otherwise, Stripe will continue to attempt payment using the existing information. If you have any questions or concerns, please contact us: ${LINKS_V1.contactEN}. We are always here to assist. Thank you for your cooperation!`;
 
       // IMPORTANT: use template literals for multi-line signature
       const signature = lang === 'fr'
@@ -1309,18 +1587,18 @@
 
       // Reminder of course offerings, embedded link, French only
       const coursesReminderHTML = (lang === 'fr')
-        ? `<p style="margin-bottom: 0.9rem;">Besoin d'un rappel de ce que nous offrons ? Retrouvez notre sélection de formations <a href="${LINKS.coursesFR}">ici</a>.</p>`
+        ? `<p style="margin-bottom: 0.9rem;">Besoin d'un rappel de ce que nous offrons ? Retrouvez notre sélection de formations <a href="${LINKS_V1.coursesFR}">ici</a>.</p>`
         : '';
 
       // Cancel section with password reset link as "ici / here" (more email-like)
       const cancelHTML = (lang === 'fr')
-        ? `<p style="margin-bottom: 0.9rem;"><strong>Pour annuler votre abonnement :</strong> Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser <a href="${LINKS.resetFR}">ici</a>.</p>`
-        : `<p style="margin-bottom: 0.9rem;"><strong>To cancel your membership:</strong> Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it <a href="${LINKS.resetEN}">here</a>.</p>`;
+        ? `<p style="margin-bottom: 0.9rem;"><strong>Pour annuler votre abonnement :</strong> Rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l'annulation. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser <a href="${LINKS_V1.resetFR}">ici</a>.</p>`
+        : `<p style="margin-bottom: 0.9rem;"><strong>To cancel your membership:</strong> Go to your account settings or reply to this message to request cancellation. If you have forgotten your login password, you can reset it <a href="${LINKS_V1.resetEN}">here</a>.</p>`;
 
       // Contact link as "nous contacter / contact us"
       const contactHTML = (lang === 'fr')
-        ? `<a href="${LINKS.contactFR}">nous contacter</a>`
-        : `<a href="${LINKS.contactEN}">contact us</a>`;
+        ? `<a href="${LINKS_V1.contactFR}">nous contacter</a>`
+        : `<a href="${LINKS_V1.contactEN}">contact us</a>`;
 
       // Urgency with embedded contact link
       const urgencyHTML = (lang === 'fr')
@@ -1330,8 +1608,8 @@
       // Portal section as "Portail client" link when allowed
       const portalHTML = includePortal
         ? (lang === 'fr'
-            ? `<p style="margin-bottom: 0.9rem;"><strong>Visitez votre compte :</strong> <a href="${LINKS.portal}">Portail client</a></p>`
-            : `<p style="margin-bottom: 0.9rem;"><strong>Visit your account:</strong> <a href="${LINKS.portal}">Customer Portal</a></p>`)
+            ? `<p style="margin-bottom: 0.9rem;"><strong>Visitez votre compte :</strong> <a href="${LINKS_V1.portal}">Portail client</a></p>`
+            : `<p style="margin-bottom: 0.9rem;"><strong>Visit your account:</strong> <a href="${LINKS_V1.portal}">Customer Portal</a></p>`)
         : '';
 
       const keepHeaderHTML = `<p style="margin-bottom: 0.9rem;"><strong>${esc(keepHeader)}</strong></p>`;
@@ -1589,52 +1867,69 @@
         STATE.tool = 'fpmb';
         STATE.activeReasons = REASONS;
 
-        assert('REASONS length should be 8', REASONS.length === 8);
+        assert('REASONS length should be 6', REASONS.length === 6);
         assert('Each reason should have fr/en', REASONS.every(r => r.fr && r.en));
+        assert('Each reason should resolve a reason line',
+          REASONS.every(r => ['fr', 'en'].every(l => (r[l].reasonLine || '').length > 0)));
 
-        // v1 snapshot should be an independent, frozen copy of the current 8 reasons
-        assert('REASONS_V1 snapshot has 8 reasons', REASONS_V1.length === 8);
+        // The v1 archive stays intact and independent of the current set
+        assert('REASONS_V1 still has the original 8 reasons', REASONS_V1.length === 8);
         assert('REASONS_V1 is frozen', Object.isFrozen(REASONS_V1) && Object.isFrozen(REASONS_V1[0]));
-        assert('REASONS_V1 keys match REASONS keys', REASONS_V1.every((r, i) => r.key === REASONS[i].key));
+        assert('REASONS_V1 keeps its own wording',
+          REASONS_V1[0].en.reasonLine === 'Reason for Payment Failure: The registered card has expired.');
+        assert('Every version has a renderer', VERSIONS.every(v => typeof v.build === 'function'));
 
         // Build a sample message (EN, reason 1)
         STATE.reasonIndex = 0;
         STATE.lang = 'en';
         buildMessage();
 
-        assert('Message first line is not empty', STATE.emailText.split('\n')[0].trim().length > 0);
+        assert('Message first line is the subject', STATE.emailText.split('\n')[0] === COMMON.en.subject);
         assert('Message does not start with "Subject:" label', !STATE.emailText.startsWith('Subject:'));
         assert('Message contains blank line after subject', STATE.emailText.includes('\n\n'));
-        assert('Portal included in TEXT for non-lost/stolen', STATE.emailText.includes(LINKS.portal));
-        assert('Portal included in HTML for non-lost/stolen', STATE.emailHTML.includes(`href="${LINKS.portal}"`));
+        assert('Numbered steps render as an ordered list', STATE.emailHTML.includes('<ol'));
+        assert('Account settings link included in HTML', STATE.emailHTML.includes(`href="${LINKS.settingsEN}"`));
+        assert('Markdown bold is rendered, not literal', !STATE.emailHTML.includes('**'));
+        assert('Markdown links are rendered, not literal', !/\]\(https?:/.test(STATE.emailHTML));
+        assert('Current set no longer mentions the Stripe portal', !STATE.emailText.includes(LINKS_V1.portal));
 
-        // Lost/stolen must not mention portal anywhere
+        // Lost/stolen drops the account line and uses a single bullet
         STATE.reasonIndex = REASONS.findIndex(r => r.key === 'lost_or_stolen');
         STATE.lang = 'en';
         buildMessage();
-        assert('Lost/stolen TEXT should not include portal link', !STATE.emailText.includes(LINKS.portal));
-        assert('Lost/stolen HTML should not include portal link', !STATE.emailHTML.includes(LINKS.portal));
-        assert('Lost/stolen should not mention customer portal', !/customer portal/i.test(STATE.emailText));
-        assert('Lost/stolen should not mention Stripe portal in FR label', !/Portail client/i.test(STATE.emailText));
+        assert('Lost/stolen omits the top account-settings line',
+          !STATE.emailText.includes('Go to your Imagine Clarity Account setting'));
+        assert('Lost/stolen uses a bullet list', STATE.emailHTML.includes('<ul'));
+        assert('Lost/stolen keeps account links in the cancel paragraph',
+          STATE.emailHTML.includes(`href="${LINKS.settingsEN}"`));
 
-        // FR should contain the FR contact link, EN should contain EN contact link
+        // FR should contain the FR links, EN should contain EN links
         STATE.reasonIndex = 0;
         STATE.lang = 'fr';
         buildMessage();
         assert('FR message contains FR contact link', STATE.emailText.includes(LINKS.contactFR));
         assert('FR message does not contain EN contact link', !STATE.emailText.includes(LINKS.contactEN));
+        assert('FR message contains the courses link', STATE.emailText.includes(LINKS.coursesFR));
 
         STATE.lang = 'en';
         buildMessage();
         assert('EN message contains EN contact link', STATE.emailText.includes(LINKS.contactEN));
         assert('EN message does not contain FR contact link', !STATE.emailText.includes(LINKS.contactFR));
+        assert('EN message has no courses link yet', !STATE.emailText.includes(LINKS.coursesFR));
 
-        // Building from the v1 snapshot should work independently of the live list
+        // The v1 archive still renders with its own template and its own links
         STATE.activeReasons = REASONS_V1;
         STATE.reasonIndex = 0;
         STATE.lang = 'en';
         buildMessage();
         assert('v1 build produces a message', STATE.emailText.split('\n')[0].trim().length > 0);
+        assert('v1 keeps its original subject',
+          STATE.emailText.split('\n')[0] === 'Action Required Today – Issue with Your Imagine Clarity Subscription Renewal');
+        assert('v1 still includes the Stripe portal', STATE.emailText.includes(LINKS_V1.portal));
+
+        STATE.reasonIndex = REASONS_V1.findIndex(r => r.key === 'lost_or_stolen');
+        buildMessage();
+        assert('v1 lost/stolen still omits the portal', !STATE.emailText.includes(LINKS_V1.portal));
         STATE.activeReasons = REASONS;
 
         const canUseClipboardApi = !!(navigator.clipboard && typeof navigator.clipboard.write === 'function' && window.isSecureContext && typeof window.ClipboardItem !== 'undefined');
