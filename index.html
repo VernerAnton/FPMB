@@ -204,6 +204,64 @@
     .choice:active { transform: translate(0, 0); box-shadow: 1px 1px 0px currentColor; }
     .choice:focus { outline: 2px solid currentColor; outline-offset: 4px; }
 
+    .version-row {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 0.25rem;
+    }
+
+    .version-tab {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.65rem;
+      border: 2px dashed;
+      font-weight: bold;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      opacity: 0.75;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .version-tab:hover, .version-tab:focus { transform: translate(-2px, -2px); opacity: 1; }
+    .version-tab:active { transform: translate(0, 0); }
+    .version-tab:focus { outline: 2px solid currentColor; outline-offset: 4px; }
+    .version-tab.active { opacity: 1; border-style: solid; }
+
+    .light-mode .version-tab { border-color: #2a2a2a; color: #2a2a2a; }
+    .dark-mode .version-tab { border-color: #e0e0e0; color: #e0e0e0; }
+
+    .version-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 0.5rem;
+      min-width: 220px;
+      max-width: 280px;
+      padding: 0.6rem 0.75rem;
+      border: 2px solid;
+      font-size: 0.72rem;
+      font-weight: normal;
+      letter-spacing: normal;
+      text-transform: none;
+      line-height: 1.5;
+      text-align: left;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 10;
+    }
+
+    .version-tab:hover .version-tooltip,
+    .version-tab:focus .version-tooltip { opacity: 1; }
+
+    .light-mode .version-tooltip { background: #fefdfb; border-color: #2a2a2a; color: #2a2a2a; box-shadow: 3px 3px 0px #2a2a2a; }
+    .dark-mode .version-tooltip { background: #2a2a2a; border-color: #e0e0e0; color: #e0e0e0; box-shadow: 3px 3px 0px #e0e0e0; }
+
     .num {
       min-width: 2.2rem;
       display:inline-flex;
@@ -490,7 +548,8 @@
       // HTML Runner state
       autoCopy: true,   // Auto-copy toggle for HTML Runner
       htmlInput: '',    // Raw HTML input
-      htmlRendered: ''  // Sanitized/rendered HTML
+      htmlRendered: '', // Sanitized/rendered HTML
+      activeReasons: null // Set to REASONS (live) or REASONS_V1 once both are defined below
     };
 
     // ===== Hardcoded links (DO NOT CHANGE) =====
@@ -623,6 +682,30 @@
         }
       }
     ];
+
+    // Frozen snapshot of the original 8 reasons ("v1"), taken before any streamlining.
+    // Deep-cloned so future edits to REASONS above can never touch this copy, and
+    // deep-frozen so it can't be mutated by accident either.
+    function deepFreeze(obj) {
+      Object.getOwnPropertyNames(obj).forEach(key => {
+        const val = obj[key];
+        if (val && typeof val === 'object') deepFreeze(val);
+      });
+      return Object.freeze(obj);
+    }
+    const REASONS_V1 = deepFreeze(JSON.parse(JSON.stringify(REASONS)));
+
+    // Which reason list step 1 currently shows / builds from: live REASONS by default.
+    STATE.activeReasons = REASONS;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     // ===== DOM =====
     const els = {
@@ -927,12 +1010,12 @@
       if (STATE.tool === 'fpmb' && STATE.step === 1) {
         setStep(1);
         setStatus('Choose reason');
-        els.hint.textContent = 'Tip: press 1–7. Or click a row. Esc does nothing here.';
+        els.hint.textContent = `Tip: press 1–${STATE.activeReasons.length}. Or click a row. Esc does nothing here.`;
 
         const list = document.createElement('div');
         list.className = 'list';
 
-        REASONS.forEach((r, idx) => {
+        STATE.activeReasons.forEach((r, idx) => {
           const btn = document.createElement('div');
           btn.className = 'choice';
           btn.tabIndex = 0;
@@ -962,6 +1045,7 @@
 
         els.screen.innerHTML = '';
         els.screen.appendChild(list);
+        renderVersionTab(els.screen);
       }
 
       if (STATE.tool === 'fpmb' && STATE.step === 2) {
@@ -1030,6 +1114,48 @@
       }
     }
 
+    // ===== Version tab (archived reason snapshots, e.g. "v1") =====
+    function renderVersionTab(screenEl) {
+      const row = document.createElement('div');
+      row.className = 'version-row';
+
+      const isV1 = STATE.activeReasons === REASONS_V1;
+
+      const tab = document.createElement('div');
+      tab.className = 'version-tab' + (isV1 ? ' active' : '');
+      tab.tabIndex = 0;
+      tab.setAttribute('role', 'button');
+      tab.setAttribute('aria-label', isV1
+        ? 'v1 active — click to switch back to the current reason list'
+        : 'v1 — click to switch to the archived original 8 reasons');
+
+      const label = document.createElement('span');
+      label.textContent = isV1 ? 'v1 ✓' : 'v1';
+      tab.appendChild(label);
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'version-tooltip';
+      tooltip.innerHTML = REASONS_V1.map((r, i) => `${i + 1}. ${escapeHtml(r.label)}`).join('<br>');
+      tab.appendChild(tooltip);
+
+      tab.addEventListener('click', () => toggleVersion());
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleVersion();
+        }
+      });
+
+      row.appendChild(tab);
+      screenEl.appendChild(row);
+    }
+
+    function toggleVersion() {
+      STATE.activeReasons = (STATE.activeReasons === REASONS_V1) ? REASONS : REASONS_V1;
+      showNote(STATE.activeReasons === REASONS_V1 ? 'V1' : 'LIVE');
+      render();
+    }
+
     function selectReason(idx) {
       STATE.reasonIndex = idx;
       setStatus(`Reason ${idx + 1}`);
@@ -1057,7 +1183,7 @@
     }
 
     function buildMessage() {
-      const reason = REASONS[STATE.reasonIndex];
+      const reason = STATE.activeReasons[STATE.reasonIndex];
       const lang = STATE.lang;
 
       // Subject included as first line WITHOUT "Subject:" / "Sujet :"
@@ -1309,6 +1435,7 @@
       STATE.emailHTML = '';
       STATE.htmlInput = '';
       STATE.htmlRendered = '';
+      STATE.activeReasons = REASONS;
       document.title = 'Failed Payment Message Builder';
       setStatus('Ready');
       showNote('READY');
@@ -1379,7 +1506,7 @@
           }
           if (!isTyping) {
             const n = parseInt(e.key, 10);
-            if (n >= 1 && n <= 7) {
+            if (n >= 1 && n <= STATE.activeReasons.length) {
               e.preventDefault();
               selectReason(n - 1);
             }
@@ -1423,17 +1550,24 @@
         reasonIndex: STATE.reasonIndex,
         lang: STATE.lang,
         emailText: STATE.emailText,
-        emailHTML: STATE.emailHTML
+        emailHTML: STATE.emailHTML,
+        activeReasons: STATE.activeReasons
       };
 
       try {
         log('[ RUN ]');
 
-        // Set to FPMB tool for tests
+        // Set to FPMB tool for tests, using the live reason list
         STATE.tool = 'fpmb';
+        STATE.activeReasons = REASONS;
 
-        assert('REASONS length should be 7', REASONS.length === 7);
+        assert('REASONS length should be 8', REASONS.length === 8);
         assert('Each reason should have fr/en', REASONS.every(r => r.fr && r.en));
+
+        // v1 snapshot should be an independent, frozen copy of the current 8 reasons
+        assert('REASONS_V1 snapshot has 8 reasons', REASONS_V1.length === 8);
+        assert('REASONS_V1 is frozen', Object.isFrozen(REASONS_V1) && Object.isFrozen(REASONS_V1[0]));
+        assert('REASONS_V1 keys match REASONS keys', REASONS_V1.every((r, i) => r.key === REASONS[i].key));
 
         // Build a sample message (EN, reason 1)
         STATE.reasonIndex = 0;
@@ -1447,7 +1581,7 @@
         assert('Portal included in HTML for non-lost/stolen', STATE.emailHTML.includes(`href="${LINKS.portal}"`));
 
         // Lost/stolen must not mention portal anywhere
-        STATE.reasonIndex = 5;
+        STATE.reasonIndex = REASONS.findIndex(r => r.key === 'lost_or_stolen');
         STATE.lang = 'en';
         buildMessage();
         assert('Lost/stolen TEXT should not include portal link', !STATE.emailText.includes(LINKS.portal));
@@ -1467,6 +1601,14 @@
         assert('EN message contains EN contact link', STATE.emailText.includes(LINKS.contactEN));
         assert('EN message does not contain FR contact link', !STATE.emailText.includes(LINKS.contactFR));
 
+        // Building from the v1 snapshot should work independently of the live list
+        STATE.activeReasons = REASONS_V1;
+        STATE.reasonIndex = 0;
+        STATE.lang = 'en';
+        buildMessage();
+        assert('v1 build produces a message', STATE.emailText.split('\n')[0].trim().length > 0);
+        STATE.activeReasons = REASONS;
+
         const canUseClipboardApi = !!(navigator.clipboard && typeof navigator.clipboard.write === 'function' && window.isSecureContext && typeof window.ClipboardItem !== 'undefined');
         log(`[ INFO ] Rich Clipboard API available: ${canUseClipboardApi}`);
 
@@ -1483,6 +1625,7 @@
         STATE.reasonIndex = original.reasonIndex;
         STATE.lang = original.lang;
         STATE.emailText = original.emailText;
+        STATE.activeReasons = original.activeReasons;
         STATE.emailHTML = original.emailHTML;
       }
     }
