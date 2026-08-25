@@ -204,26 +204,37 @@
     .choice:active { transform: translate(0, 0); box-shadow: 1px 1px 0px currentColor; }
     .choice:focus { outline: 2px solid currentColor; outline-offset: 4px; }
 
-    .version-row {
+    .version-bar {
       display: flex;
-      justify-content: flex-start;
-      margin-top: 0.25rem;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.1rem;
+    }
+
+    .version-bar:empty { display: none; }
+
+    .version-bar-label {
+      font-size: 0.7rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.55;
     }
 
     .version-tab {
       position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.35rem 0.65rem;
+      padding: 0.3rem 0.7rem;
       border: 2px dashed;
       font-weight: bold;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       cursor: pointer;
       user-select: none;
-      opacity: 0.75;
+      opacity: 0.7;
       transition: transform 0.15s, opacity 0.15s;
     }
 
@@ -234,6 +245,9 @@
 
     .light-mode .version-tab { border-color: #2a2a2a; color: #2a2a2a; }
     .dark-mode .version-tab { border-color: #e0e0e0; color: #e0e0e0; }
+
+    .light-mode .version-tab.active { background: #2a2a2a; color: #fefdfb; }
+    .dark-mode .version-tab.active { background: #e0e0e0; color: #1a1a1a; }
 
     .version-tooltip {
       position: absolute;
@@ -459,7 +473,7 @@
       <h1 class="title">════ FPMB ════</h1>
       <div class="spacer" aria-hidden="true"></div>
     </header>
-    <div class="subtitle">[ Choose reason (1–7) · choose language (1–2) · copied ]</div>
+    <div class="subtitle">[ Choose reason · choose language · copied ]</div>
 
     <main class="tool-shell" aria-label="Failed payment message builder">
       <div class="topRow">
@@ -476,6 +490,8 @@
         <div class="status" id="status">[ Ready. ]</div>
         <div class="btnRow" id="footerButtons"></div>
       </div>
+
+      <div class="version-bar" id="versionBar"></div>
 
       <div class="help muted" id="hint">Tip: use number keys. Esc goes back. Enter starts a new message on the final screen.</div>
 
@@ -695,6 +711,13 @@
     }
     const REASONS_V1 = deepFreeze(JSON.parse(JSON.stringify(REASONS)));
 
+    // Selectable reason-list versions, shown side by side under the status line.
+    // Add future snapshots here (e.g. v2) and they appear in the bar automatically.
+    const VERSIONS = [
+      { id: 'current', label: 'Current', list: REASONS },
+      { id: 'v1', label: 'v1', list: REASONS_V1 }
+    ];
+
     // Which reason list step 1 currently shows / builds from: live REASONS by default.
     STATE.activeReasons = REASONS;
 
@@ -714,6 +737,7 @@
       note: document.getElementById('note'),
       stepIndicator: document.getElementById('stepIndicator'),
       footerButtons: document.getElementById('footerButtons'),
+      versionBar: document.getElementById('versionBar'),
       hint: document.getElementById('hint'),
       testlog: document.getElementById('testlog')
     };
@@ -993,6 +1017,7 @@
     // ===== Main Render Function =====
     function render() {
       clearFooterButtons();
+      els.versionBar.innerHTML = '';
 
       // Tool selector (no tool selected yet)
       if (STATE.tool === null) {
@@ -1045,7 +1070,7 @@
 
         els.screen.innerHTML = '';
         els.screen.appendChild(list);
-        renderVersionTab(els.screen);
+        renderVersionBar();
       }
 
       if (STATE.tool === 'fpmb' && STATE.step === 2) {
@@ -1114,45 +1139,48 @@
       }
     }
 
-    // ===== Version tab (archived reason snapshots, e.g. "v1") =====
-    function renderVersionTab(screenEl) {
-      const row = document.createElement('div');
-      row.className = 'version-row';
+    // ===== Version bar (reason-list snapshots, shown side by side) =====
+    function renderVersionBar() {
+      els.versionBar.innerHTML = '';
 
-      const isV1 = STATE.activeReasons === REASONS_V1;
+      const label = document.createElement('div');
+      label.className = 'version-bar-label';
+      label.textContent = '[ Version ]';
+      els.versionBar.appendChild(label);
 
-      const tab = document.createElement('div');
-      tab.className = 'version-tab' + (isV1 ? ' active' : '');
-      tab.tabIndex = 0;
-      tab.setAttribute('role', 'button');
-      tab.setAttribute('aria-label', isV1
-        ? 'v1 active — click to switch back to the current reason list'
-        : 'v1 — click to switch to the archived original 8 reasons');
+      VERSIONS.forEach(v => {
+        const isActive = STATE.activeReasons === v.list;
 
-      const label = document.createElement('span');
-      label.textContent = isV1 ? 'v1 ✓' : 'v1';
-      tab.appendChild(label);
+        const tab = document.createElement('div');
+        tab.className = 'version-tab' + (isActive ? ' active' : '');
+        tab.tabIndex = 0;
+        tab.setAttribute('role', 'button');
+        tab.setAttribute('aria-pressed', String(isActive));
+        tab.setAttribute('aria-label',
+          `${v.label} reason list (${v.list.length} reasons)${isActive ? ' — active' : ''}`);
+        tab.appendChild(document.createTextNode(v.label));
 
-      const tooltip = document.createElement('div');
-      tooltip.className = 'version-tooltip';
-      tooltip.innerHTML = REASONS_V1.map((r, i) => `${i + 1}. ${escapeHtml(r.label)}`).join('<br>');
-      tab.appendChild(tooltip);
+        const tooltip = document.createElement('div');
+        tooltip.className = 'version-tooltip';
+        tooltip.innerHTML = v.list.map((r, i) => `${i + 1}. ${escapeHtml(r.label)}`).join('<br>');
+        tab.appendChild(tooltip);
 
-      tab.addEventListener('click', () => toggleVersion());
-      tab.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggleVersion();
-        }
+        tab.addEventListener('click', () => selectVersion(v));
+        tab.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectVersion(v);
+          }
+        });
+
+        els.versionBar.appendChild(tab);
       });
-
-      row.appendChild(tab);
-      screenEl.appendChild(row);
     }
 
-    function toggleVersion() {
-      STATE.activeReasons = (STATE.activeReasons === REASONS_V1) ? REASONS : REASONS_V1;
-      showNote(STATE.activeReasons === REASONS_V1 ? 'V1' : 'LIVE');
+    function selectVersion(v) {
+      if (STATE.activeReasons === v.list) return;
+      STATE.activeReasons = v.list;
+      showNote(v.label.toUpperCase());
       render();
     }
 
