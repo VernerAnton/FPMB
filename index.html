@@ -578,7 +578,7 @@
       contactEN: 'https://app.imagineclarity.com/contact',
       contactFR: 'https://app.imagineclarity.com/fr/contact',
       homeEN: 'https://app.imagineclarity.com/',
-      homeFR: 'https://app.imagineclarity.com/fr',
+      homeFR: 'https://app.imagineclarity.com/fr/',
       // Hosted Mailchimp archive of the course selection (FR only for now).
       coursesFR: 'https://us11.campaign-archive.com/?e=[UNIQID]&u=55630375241ac6041814fcdab&id=a5596a047b'
     });
@@ -734,14 +734,14 @@
     const COMMON = {
       en: {
         subject: 'Resolve or Cancel - Action required. Your Imagine Clarity Subscription.',
-        greeting: 'Dear Imagine Clarity customer,',
+        greeting: 'Dear Imagine Clarity member,',
         intro: 'There is an issue with your Imagine Clarity subscription renewal. Several options are available to resolve this!',
-        accountLine: `Go to your [Imagine Clarity Account setting](${LINKS.settingsEN}) here. Did you forget your password? Reset it [here](${LINKS.resetEN}).`,
+        accountLine: `Go to your [Imagine Clarity Account settings](${LINKS.settingsEN}) here. Did you forget your password? Reset it [here](${LINKS.resetEN}).`,
         keepHeader: '**To keep your current (lower) subscription price:**',
         listType: 'ol',
         cancel: '**To cancel your membership:** Easy to do either at your account settings or reply to this message to request cancellation.',
         questions: `**Any questions or concerns?** Please [contact us](${LINKS.contactEN}). We are always here to assist!`,
-        closing: 'Please resolve the issue promptly; Imagine Clarity uses secure Stripe for online payments, and it will continue to attempt payment using the existing information. -It\'s easy to resolve! Thank you very much for your cooperation.',
+        closing: 'Please resolve the issue promptly; Imagine Clarity uses secure Stripe for online payments, and Stripe will continue to attempt payment using the existing information. It\'s easy to resolve! Thank you very much for your cooperation.',
         signOff: 'With best wishes,',
         signature: `Anton\n[Imagine Clarity](${LINKS.homeEN}) Customer Care`
       },
@@ -754,7 +754,7 @@
         listType: 'ol',
         cancel: '**Pour annuler votre abonnement :** c\'est simple, rendez-vous dans les paramètres de votre compte ou répondez à ce message pour demander l\'annulation.',
         questions: `**Des questions ou des préoccupations ?** N'hésitez pas à [nous contacter](${LINKS.contactFR}). Nous sommes toujours là pour vous aider !`,
-        closing: 'Merci de résoudre ce problème rapidement ; Imagine Clarity utilise la solution sécurisée Stripe pour les paiements en ligne, et celle-ci continuera de tenter le prélèvement avec les informations existantes. -C\'est facile à résoudre ! Merci beaucoup pour votre coopération.',
+        closing: 'Merci de résoudre ce problème rapidement ; Imagine Clarity utilise la solution sécurisée Stripe pour les paiements en ligne, et celle-ci continuera de tenter le prélèvement avec les informations existantes. C\'est facile à résoudre ! Merci beaucoup pour votre coopération.',
         signOff: 'Bien cordialement,',
         signature: `Anton\nService Client [Imagine Clarity](${LINKS.homeFR})`
       }
@@ -769,7 +769,6 @@
         key: 'card_invalid_or_expired',
         label: 'Card expired / Incorrect card number / Invalid card or account number',
         en: {
-          greeting: 'Dear Imagine Clarity member,',
           reasonLine: 'Reason for Payment Failure: The registered card has expired, or the card number is invalid.',
           steps: [
             'Update your card details and verify your billing address.',
@@ -793,7 +792,7 @@
           steps: [
             'Please check that your card details, including the billing address, are correct.',
             'Please contact your bank to verify the payment.',
-            'You may also add / try another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
           ]
         },
         fr: {
@@ -801,7 +800,7 @@
           steps: [
             'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
             'Veuillez contacter votre banque pour valider le paiement.',
-            'Vous pouvez également ajouter / essayer un autre moyen de paiement. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
             COURSES_STEP_FR
           ]
         }
@@ -812,7 +811,7 @@
         en: {
           reasonLine: 'Reason for Payment Failure: PayPal declined the transaction.',
           steps: [
-            'Please contact your PayPal to verify the payment.',
+            'Please contact PayPal to verify the payment.',
             'Please check that your card details, including the billing address, are correct.',
             'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
           ]
@@ -835,7 +834,7 @@
           steps: [
             'Please check that your card details, including the billing address, are correct.',
             'Please try again and complete the authentication step. If the issue persists, contact us or your bank for more information.',
-            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
           ]
         },
         fr: {
@@ -843,7 +842,7 @@
           steps: [
             'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
             'Veuillez réessayer et compléter l\'étape d\'authentification. Si le problème persiste, contactez-nous ou contactez votre banque pour plus d\'informations.',
-            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
             COURSES_STEP_FR
           ]
         }
@@ -861,7 +860,7 @@
           keepHeader: '**To keep your membership:**',
           listType: 'ul',
           steps: ['Contact your bank for more information.'],
-          cancel: `**To cancel your membership:** Go to your [Imagine Clarity Account setting](${LINKS.settingsEN}) here. Did you forget your password? Reset it [here](${LINKS.resetEN}). Or reply to this message to request cancellation.`
+          cancel: `**To cancel your membership:** Go to your [Imagine Clarity Account settings](${LINKS.settingsEN}) here. Did you forget your password? Reset it [here](${LINKS.resetEN}), or reply to this message to request cancellation.`
         },
         fr: {
           intro: 'Un problème est survenu lors du renouvellement de votre abonnement Imagine Clarity. Imagine Clarity utilise Stripe pour les paiements en ligne, et plusieurs options s\'offrent à vous pour le résoudre.',
@@ -880,16 +879,16 @@
           reasonLine: 'Reason for Payment Failure: The payment attempt could not be completed due to an interrupted session.',
           steps: [
             'Please check that your card details, including the billing address, are correct.',
-            'Retry and complete the payment without closing the page.',
-            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'Please retry and complete the payment without closing the page.',
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
           ]
         },
         fr: {
           reasonLine: 'Motif de l\'échec du paiement : la tentative de paiement n\'a pas pu être finalisée en raison d\'une session interrompue.',
           steps: [
             'Veuillez vérifier que les informations de votre carte, y compris l\'adresse de facturation, sont correctes.',
-            'Réessayez et finalisez le paiement sans fermer la page.',
-            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            'Veuillez réessayer et finaliser le paiement sans fermer la page.',
+            'Vous pouvez également ajouter / choisir un autre moyen de paiement. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
             COURSES_STEP_FR
           ]
         }
@@ -1894,14 +1893,63 @@
         assert('Current set no longer mentions the Stripe portal', !STATE.emailText.includes(LINKS_V1.portal));
 
         // Lost/stolen drops the account line and uses a single bullet
-        STATE.reasonIndex = REASONS.findIndex(r => r.key === 'lost_or_stolen');
+        const lostIdx = REASONS.findIndex(r => r.key === 'lost_or_stolen');
+        assert('Standard reasons carry an account line', !!field(REASONS[0], 'en', 'accountLine'));
+        assert('Lost/stolen omits the account line', field(REASONS[lostIdx], 'en', 'accountLine') === null);
+        STATE.reasonIndex = lostIdx;
         STATE.lang = 'en';
         buildMessage();
-        assert('Lost/stolen omits the top account-settings line',
-          !STATE.emailText.includes('Go to your Imagine Clarity Account setting'));
         assert('Lost/stolen uses a bullet list', STATE.emailHTML.includes('<ul'));
         assert('Lost/stolen keeps account links in the cancel paragraph',
           STATE.emailHTML.includes(`href="${LINKS.settingsEN}"`));
+
+        // ----- Applied review decisions -----
+        const enAll = REASONS.map((_, i) => { STATE.reasonIndex = i; STATE.lang = 'en'; buildMessage(); return STATE.emailText; });
+        const frAll = REASONS.map((_, i) => { STATE.reasonIndex = i; STATE.lang = 'fr'; buildMessage(); return STATE.emailText; });
+
+        // A1 — "member", never "customer", in every English email
+        assert('A1: every EN email greets "member"', enAll.every(t => t.includes('Dear Imagine Clarity member,')));
+        assert('A1: no EN email greets "customer"', enAll.every(t => !t.includes('Imagine Clarity customer')));
+
+        // A2 — PayPal listed everywhere except the PayPal-declined reason
+        const methodLine = (t, re) => (t.split('\n').find(l => re.test(l)) || '');
+        REASONS.forEach((r, i) => {
+          const en = methodLine(enAll[i], /another payment method/);
+          const fr = methodLine(frAll[i], /autre moyen de paiement/);
+          if (r.key === 'paypal_declined') {
+            assert('A2: PayPal excluded from its own reason (EN)', en && !en.includes('PayPal,'));
+            assert('A2: PayPal excluded from its own reason (FR)', fr && !fr.includes('PayPal,'));
+          } else if (r.key !== 'lost_or_stolen') {
+            assert(`A2: PayPal listed in EN "${r.key}"`, en.includes('(PayPal,'));
+            assert(`A2: PayPal listed in FR "${r.key}"`, fr.includes('(PayPal,'));
+          }
+        });
+
+        // A3 / A5 / B6 / B7 / B8 / B9 / B10 / D19
+        assert('A3: "add / try" replaced by "add / choose"', enAll.every(t => !t.includes('add / try')));
+        assert('A3: "ajouter / essayer" replaced by "ajouter / choisir"', frAll.every(t => !t.includes('ajouter / essayer')));
+        assert('A5: EN session step asks politely', enAll[5].includes('Please retry and complete the payment'));
+        assert('A5: FR session step asks politely', frAll[5].includes('Veuillez réessayer et finaliser le paiement'));
+        assert('B6: "contact your PayPal" fixed', enAll.every(t => !t.includes('contact your PayPal')));
+        assert('B7: "Account settings" is plural', REASONS.every((_, i) => {
+          STATE.reasonIndex = i; STATE.lang = 'en'; buildMessage();
+          return !/Account setting[^s]/.test(STATE.emailHTML);
+        }));
+        assert('B8: bare hyphen removed (EN)', enAll.every(t => t.includes('. It\'s easy to resolve!') && !t.includes('-It\'s')));
+        assert('B8: bare hyphen removed (FR)', frAll.every(t => t.includes('. C\'est facile à résoudre !') && !t.includes('-C\'est')));
+        assert('B9: ambiguous "it" replaced with Stripe', enAll.every(t => t.includes('and Stripe will continue to attempt payment')));
+        assert('B10: "Or reply" joined into previous sentence', enAll[lostIdx].includes(', or reply to this message'));
+        assert('D19: FR home link has a trailing slash', LINKS.homeFR.endsWith('/fr/'));
+
+        // A4 / C11 / C12-C15 were decided as "leave as is"
+        assert('A4: #3 still leads with contacting PayPal',
+          enAll[2].indexOf('contact PayPal') < enAll[2].indexOf('check that your card details'));
+        assert('C11: reason 1 still has two steps', REASONS[0].en.steps.length === 2);
+        assert('C12: lost/stolen keeps its own keep-header',
+          field(REASONS[lostIdx], 'en', 'keepHeader') === '**To keep your membership:**');
+        assert('C15: lost/stolen has no courses step (FR)', !frAll[lostIdx].includes(LINKS.coursesFR));
+
+        STATE.lang = 'en';
 
         // FR should contain the FR links, EN should contain EN links
         STATE.reasonIndex = 0;
