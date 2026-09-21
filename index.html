@@ -579,8 +579,9 @@
       contactFR: 'https://app.imagineclarity.com/fr/contact',
       homeEN: 'https://app.imagineclarity.com/',
       homeFR: 'https://app.imagineclarity.com/fr/',
-      // Hosted Mailchimp archive of the course selection (FR only for now).
-      coursesFR: 'https://us11.campaign-archive.com/?e=[UNIQID]&u=55630375241ac6041814fcdab&id=a5596a047b'
+      // Hosted Mailchimp pages for the course selection — one per language.
+      coursesEN: 'https://mailchi.mp/imagineclarity.com/offre-exceptionnelle-25pc-sur-tous-les-cours-6215685',
+      coursesFR: 'https://mailchi.mp/imagineclarity.com/offre-exceptionnelle-25pc-sur-tous-les-cours-6215696'
     });
 
     // Links frozen alongside the archived v1 message set, so edits to LINKS above
@@ -760,9 +761,11 @@
       }
     };
 
-    // Reusable final step: reminder of the course catalogue (FR only for now — there
-    // is no English catalogue link yet).
-    const COURSES_STEP_FR = `Besoin d'un rappel des formations Imagine Clarity 🌟 ? Découvrez notre sélection de formations [ici](${LINKS.coursesFR}).`;
+    // Reusable final step: reminder of the course catalogue. Added to every reason
+    // except lost/stolen, which stays deliberately minimal. Both languages carry the
+    // same message and link to their own version of the page.
+    const COURSES_STEP_EN = `Remember what Imagine Clarity has to offer? Discover some of our [most popular courses](${LINKS.coursesEN}) and refresh your practice and reconnect with your innate potential.`;
+    const COURSES_STEP_FR = `Vous souvenez-vous de tout ce qu'Imagine Clarity a à vous offrir ? Découvrez quelques-uns de nos [cours les plus populaires](${LINKS.coursesFR}), ravivez votre pratique et renouez avec votre potentiel inné.`;
 
     const REASONS = [
       {
@@ -772,7 +775,8 @@
           reasonLine: 'Reason for Payment Failure: The registered card has expired, or the card number is invalid.',
           steps: [
             'Update your card details and verify your billing address.',
-            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_EN
           ]
         },
         fr: {
@@ -792,7 +796,8 @@
           steps: [
             'Please check that your card details, including the billing address, are correct.',
             'Please contact your bank to verify the payment.',
-            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_EN
           ]
         },
         fr: {
@@ -813,7 +818,8 @@
           steps: [
             'Please contact PayPal to verify the payment.',
             'Please check that your card details, including the billing address, are correct.',
-            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_EN
           ]
         },
         fr: {
@@ -834,7 +840,8 @@
           steps: [
             'Please check that your card details, including the billing address, are correct.',
             'Please try again and complete the authentication step. If the issue persists, contact us or your bank for more information.',
-            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_EN
           ]
         },
         fr: {
@@ -880,7 +887,8 @@
           steps: [
             'Please check that your card details, including the billing address, are correct.',
             'Please retry and complete the payment without closing the page.',
-            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).'
+            'You may also add / choose another payment method. (PayPal, Apple Pay, Google Pay, SEPA, Mastercard, Visa, Amex).',
+            COURSES_STEP_EN
           ]
         },
         fr: {
@@ -1944,10 +1952,34 @@
         // A4 / C11 / C12-C15 were decided as "leave as is"
         assert('A4: #3 still leads with contacting PayPal',
           enAll[2].indexOf('contact PayPal') < enAll[2].indexOf('check that your card details'));
-        assert('C11: reason 1 still has two steps', REASONS[0].en.steps.length === 2);
+        // C11 counts content steps only — the courses step is appended to every
+        // reason and would otherwise mask the difference it is pinning.
+        const contentSteps = (r, lang) =>
+          r[lang].steps.filter(s => s !== COURSES_STEP_EN && s !== COURSES_STEP_FR).length;
+        assert('C11: reason 1 still has two content steps', contentSteps(REASONS[0], 'en') === 2);
+        assert('C11: other reasons still have three', contentSteps(REASONS[1], 'en') === 3);
         assert('C12: lost/stolen keeps its own keep-header',
           field(REASONS[lostIdx], 'en', 'keepHeader') === '**To keep your membership:**');
         assert('C15: lost/stolen has no courses step (FR)', !frAll[lostIdx].includes(LINKS.coursesFR));
+        assert('C15: lost/stolen has no courses step (EN)', !enAll[lostIdx].includes(LINKS.coursesEN));
+
+        // Courses step: last step of every reason except lost/stolen, both languages
+        REASONS.forEach((r, i) => {
+          if (r.key === 'lost_or_stolen') return;
+          assert(`Courses step is last in EN "${r.key}"`, r.en.steps[r.en.steps.length - 1] === COURSES_STEP_EN);
+          assert(`Courses step is last in FR "${r.key}"`, r.fr.steps[r.fr.steps.length - 1] === COURSES_STEP_FR);
+        });
+        assert('EN courses step reads as approved',
+          COURSES_STEP_EN.startsWith('Remember what Imagine Clarity has to offer?') &&
+          COURSES_STEP_EN.endsWith('reconnect with your innate potential.'));
+        assert('FR courses step mirrors the EN message',
+          COURSES_STEP_FR.startsWith('Vous souvenez-vous de tout ce qu\'Imagine Clarity a à vous offrir ?') &&
+          COURSES_STEP_FR.endsWith('renouez avec votre potentiel inné.'));
+        assert('Each language links to its own courses page',
+          LINKS.coursesEN !== LINKS.coursesFR &&
+          [LINKS.coursesEN, LINKS.coursesFR].every(u => u.startsWith('https://mailchi.mp/')));
+        assert('Courses links no longer carry a merge tag',
+          ![LINKS.coursesEN, LINKS.coursesFR].some(u => u.includes('[UNIQID]')));
 
         STATE.lang = 'en';
 
@@ -1963,7 +1995,8 @@
         buildMessage();
         assert('EN message contains EN contact link', STATE.emailText.includes(LINKS.contactEN));
         assert('EN message does not contain FR contact link', !STATE.emailText.includes(LINKS.contactFR));
-        assert('EN message has no courses link yet', !STATE.emailText.includes(LINKS.coursesFR));
+        assert('EN message uses the EN courses link', STATE.emailText.includes(LINKS.coursesEN));
+        assert('EN message does not use the FR courses link', !STATE.emailText.includes(LINKS.coursesFR));
 
         // The v1 archive still renders with its own template and its own links
         STATE.activeReasons = REASONS_V1;
