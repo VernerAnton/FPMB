@@ -579,10 +579,9 @@
       contactFR: 'https://app.imagineclarity.com/fr/contact',
       homeEN: 'https://app.imagineclarity.com/',
       homeFR: 'https://app.imagineclarity.com/fr/',
-      // Hosted Mailchimp pages for the course selection. EN and FR currently point
-      // at different pages; the FR one is due to be replaced with a translation.
+      // Hosted Mailchimp pages for the course selection — one per language.
       coursesEN: 'https://mailchi.mp/imagineclarity.com/offre-exceptionnelle-25pc-sur-tous-les-cours-6215685',
-      coursesFR: 'https://us11.campaign-archive.com/?e=[UNIQID]&u=55630375241ac6041814fcdab&id=a5596a047b'
+      coursesFR: 'https://mailchi.mp/imagineclarity.com/offre-exceptionnelle-25pc-sur-tous-les-cours-6215696'
     });
 
     // Links frozen alongside the archived v1 message set, so edits to LINKS above
@@ -763,11 +762,10 @@
     };
 
     // Reusable final step: reminder of the course catalogue. Added to every reason
-    // except lost/stolen, which stays deliberately minimal. The two languages read
-    // differently and point at different pages for now — the French copy is due to
-    // be replaced with a translation of the English one.
+    // except lost/stolen, which stays deliberately minimal. Both languages carry the
+    // same message and link to their own version of the page.
     const COURSES_STEP_EN = `Remember what Imagine Clarity has to offer? Discover some of our [most popular courses](${LINKS.coursesEN}) and refresh your practice and reconnect with your innate potential.`;
-    const COURSES_STEP_FR = `Besoin d'un rappel des formations Imagine Clarity 🌟 ? Découvrez notre sélection de formations [ici](${LINKS.coursesFR}).`;
+    const COURSES_STEP_FR = `Vous souvenez-vous de tout ce qu'Imagine Clarity a à vous offrir ? Découvrez quelques-uns de nos [cours les plus populaires](${LINKS.coursesFR}), ravivez votre pratique et renouez avec votre potentiel inné.`;
 
     const REASONS = [
       {
@@ -1974,6 +1972,14 @@
         assert('EN courses step reads as approved',
           COURSES_STEP_EN.startsWith('Remember what Imagine Clarity has to offer?') &&
           COURSES_STEP_EN.endsWith('reconnect with your innate potential.'));
+        assert('FR courses step mirrors the EN message',
+          COURSES_STEP_FR.startsWith('Vous souvenez-vous de tout ce qu\'Imagine Clarity a à vous offrir ?') &&
+          COURSES_STEP_FR.endsWith('renouez avec votre potentiel inné.'));
+        assert('Each language links to its own courses page',
+          LINKS.coursesEN !== LINKS.coursesFR &&
+          [LINKS.coursesEN, LINKS.coursesFR].every(u => u.startsWith('https://mailchi.mp/')));
+        assert('Courses links no longer carry a merge tag',
+          ![LINKS.coursesEN, LINKS.coursesFR].some(u => u.includes('[UNIQID]')));
 
         STATE.lang = 'en';
 
